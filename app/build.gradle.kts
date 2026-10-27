@@ -123,9 +123,9 @@ dependencies {
     testImplementation("androidx.compose.ui:ui-test-junit4")
     testImplementation("androidx.test.ext:junit:1.2.1")
     testImplementation("org.robolectric:robolectric:4.17")
-    testImplementation("io.github.takahirom.roborazzi:roborazzi:1.75.0")
-    testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.75.0")
-    testImplementation("io.github.takahirom.roborazzi:roborazzi-junit-rule:1.75.0")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi:1.77.0")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.77.0")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi-junit-rule:1.77.0")
 
     androidTestImplementation(composeBom)
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
