@@ -1,0 +1,7 @@
+# Profil de référence (Baseline Profile) : le code listé ici est précompilé à l'installation au lieu d'être
+# interprété puis compilé à la volée, d'où un démarrage de l'horloge et de l'écran de veille plus fluide.
+# Compose apporte ses propres profils ; on ajoute tout le code de l'app, qui est petit et sert dès l'ouverture.
+# Format : https://developer.android.com/topic/performance/baselineprofiles/manually-create-measure
+# H = méthode chaude, S = appelée au démarrage, P = appelée après ; ** couvre toutes les classes et méthodes.
+HSPLfr/clementvassant/standbyclock/**;->**(**)**
+Lfr/clementvassant/standbyclock/**;

@@ -36,6 +36,10 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Les tests d'interface visent l'APK debug ; -PtestBuildType=release fait jouer les parcours e2e sur l'APK
+    // release, passé par R8 comme celui qu'on publie (scripts/connected-tests.sh, CI).
+    testBuildType = providers.gradleProperty("testBuildType").getOrElse("debug")
+
     signingConfigs {
         if (releaseKeystorePath != null) {
             create("release") {
@@ -49,7 +53,13 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // R8 retire le code et les ressources inutilisés et optimise le reste : APK bien plus léger.
+            // Les composants déclarés dans le manifeste (activités, écran de veille, écouteur de notifications)
+            // sont gardés d'office ; proguard-rules.pro ne garde que ce que les parcours e2e appellent directement.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            testProguardFiles("proguard-test-rules.pro")
             signingConfig = signingConfigs.getByName(if (releaseKeystorePath != null) "release" else "debug")
         }
     }
@@ -116,6 +126,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.1")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.1")
     implementation("androidx.savedstate:savedstate-ktx:1.3.0")
+    // L'APK s'installe hors du Play Store : c'est profileinstaller qui précompile au premier lancement le code listé
+    // dans src/main/baseline-prof.txt et les profils fournis par Compose.
+    implementation("androidx.profileinstaller:profileinstaller:1.4.1")
 
     testImplementation("junit:junit:4.13.2")
     // Captures de référence sur la JVM (Robolectric) : StandByScreenshotTest.
