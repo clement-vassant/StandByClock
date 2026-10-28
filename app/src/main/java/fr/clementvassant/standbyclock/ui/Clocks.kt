@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
@@ -32,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import fr.clementvassant.standbyclock.DAYS_PER_WEEK
+import fr.clementvassant.standbyclock.StatusLine
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZonedDateTime
@@ -44,6 +46,10 @@ import kotlin.math.sin
 
 private val dateFormat = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENCH)
 
+/** Texte batterie et réveil du style analogique, et la hauteur (en lignes de ce texte) qu'il prend sous le cadran. */
+private val ANALOG_STATUS_TEXT = 20.sp
+private const val ANALOG_STATUS_LINES = 2f
+
 /** Hauteur du calendrier en cellules : en-tête du mois, jours de la semaine et 6 semaines au plus. */
 private const val CALENDAR_ROWS = 8.5f
 
@@ -53,9 +59,15 @@ private fun ZonedDateTime.hhmm() = "%02d:%02d".format(hour, minute)
 @Composable
 internal fun Dp.asSp(): TextUnit = with(LocalDensity.current) { toSp() }
 
-/** Style 1 : grands chiffres façon StandBy, heures en clair, minutes en accent. */
+/** Style 1 : grands chiffres façon StandBy, heures en clair, minutes en accent ; batterie et réveil après la date. */
 @Composable
-fun DigitalClock(now: ZonedDateTime, colors: ClockColors, showSeconds: Boolean, modifier: Modifier = Modifier) {
+fun DigitalClock(
+    now: ZonedDateTime,
+    colors: ClockColors,
+    showSeconds: Boolean,
+    modifier: Modifier = Modifier,
+    status: StatusLine = StatusLine()
+) {
     BoxWithConstraints(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         val digits = min(maxHeight * 0.55f, maxWidth * 0.27f).asSp()
         val small = min(maxHeight * 0.08f, maxWidth * 0.045f).asSp()
@@ -70,7 +82,10 @@ fun DigitalClock(now: ZonedDateTime, colors: ClockColors, showSeconds: Boolean, 
                 )
                 Text("%02d".format(now.minute), color = colors.accent, fontSize = digits, fontWeight = FontWeight.Bold)
             }
-            Text(now.format(dateFormat).replaceFirstChar { it.uppercase() }, color = colors.secondary, fontSize = small)
+            DateAndStatus(small) {
+                Text(now.format(dateFormat).replaceFirstChar { it.uppercase() }, color = colors.secondary, fontSize = small)
+                StatusRow(status, colors, small)
+            }
         }
     }
 }
@@ -81,6 +96,7 @@ fun DigitalClock(now: ZonedDateTime, colors: ClockColors, showSeconds: Boolean, 
  * @param matchCalendar calendrier à côté : le cadran prend sa hauteur. Faux en portrait, où le calendrier
  * est dessous : le cadran remplit alors son panneau.
  * @param calendarHeight hauteur du calendrier, en fraction de celle de l'horloge.
+ * @param status batterie et réveil : sous la grande date, ou sous le cadran quand le calendrier est à côté.
  */
 @Composable
 fun AnalogClockWithDate(
@@ -90,7 +106,8 @@ fun AnalogClockWithDate(
     showSeconds: Boolean,
     modifier: Modifier = Modifier,
     matchCalendar: Boolean = true,
-    calendarHeight: Float = 1f
+    calendarHeight: Float = 1f,
+    status: StatusLine = StatusLine()
 ) {
     Row(
         modifier.fillMaxSize(),
@@ -105,8 +122,13 @@ fun AnalogClockWithDate(
             BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 val cell = min(maxWidth / CLOCK_PANE_WEIGHT / DAYS_PER_WEEK, maxHeight * calendarHeight / CALENDAR_ROWS)
                 val rows = 0.8f + monthGrid(now.toLocalDate()).weeks
-                val paneSize = min(maxWidth, maxHeight) * 0.9f
-                AnalogDial(now, colors, showSeconds, Modifier.size(if (matchCalendar) min(cell * rows, paneSize) else paneSize))
+                // Batterie et réveil se placent juste sous le cadran, qui leur laisse la place d'une ligne.
+                val statusSpace = if (status.isEmpty) 0.dp else ANALOG_STATUS_TEXT.asDp() * ANALOG_STATUS_LINES
+                val paneSize = min(maxWidth, maxHeight - statusSpace) * 0.9f
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    AnalogDial(now, colors, showSeconds, Modifier.size(if (matchCalendar) min(cell * rows, paneSize) else paneSize))
+                    StatusRow(status, colors, ANALOG_STATUS_TEXT, Modifier.padding(top = ANALOG_STATUS_TEXT.asDp() * 0.4f))
+                }
             }
         }
         if (showDate) {
@@ -119,6 +141,7 @@ fun AnalogClockWithDate(
                 )
                 Text(now.dayOfMonth.toString(), color = colors.primary, fontSize = 140.sp, fontWeight = FontWeight.Bold)
                 Text(now.format(DateTimeFormatter.ofPattern("MMMM", Locale.FRENCH)), color = colors.secondary, fontSize = 30.sp)
+                StatusRow(status, colors, ANALOG_STATUS_TEXT, Modifier.padding(top = 8.dp))
             }
         }
     }
@@ -153,15 +176,24 @@ private fun DrawScope.drawRadial(c: Offset, fraction: Float, from: Float, to: Fl
     drawLine(color, Offset(c.x + dx * from, c.y + dy * from), Offset(c.x + dx * to, c.y + dy * to), width, StrokeCap.Round)
 }
 
-/** Style 3 : très épuré, chiffres fins, peu de pixels allumés (idéal la nuit). */
+/** Style 3 : très épuré, chiffres fins, peu de pixels allumés (idéal la nuit) ; batterie et réveil après la date. */
 @Composable
-fun MinimalClock(now: ZonedDateTime, colors: ClockColors, modifier: Modifier = Modifier) {
+fun MinimalClock(now: ZonedDateTime, colors: ClockColors, modifier: Modifier = Modifier, status: StatusLine = StatusLine()) {
     BoxWithConstraints(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         val digits = min(maxHeight * 0.7f, maxWidth * 0.3f).asSp()
         val small = min(maxHeight * 0.06f, maxWidth * 0.03f).asSp()
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(now.hhmm(), color = colors.primary, fontSize = digits, fontWeight = FontWeight.Thin, fontFamily = FontFamily.SansSerif)
-            Text(now.format(dateFormat), color = colors.secondary, fontSize = small, fontWeight = FontWeight.Light, letterSpacing = 4.sp)
+            DateAndStatus(small) {
+                Text(
+                    now.format(dateFormat),
+                    color = colors.secondary,
+                    fontSize = small,
+                    fontWeight = FontWeight.Light,
+                    letterSpacing = 4.sp
+                )
+                StatusRow(status, colors, small)
+            }
         }
     }
 }
