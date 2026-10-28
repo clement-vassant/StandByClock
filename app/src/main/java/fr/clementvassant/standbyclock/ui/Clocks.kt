@@ -96,7 +96,8 @@ fun DigitalClock(
  * @param matchCalendar calendrier à côté : le cadran prend sa hauteur. Faux en portrait, où le calendrier
  * est dessous : le cadran remplit alors son panneau.
  * @param calendarHeight hauteur du calendrier, en fraction de celle de l'horloge.
- * @param status batterie et réveil : sous la grande date, ou sous le cadran quand le calendrier est à côté.
+ * @param status batterie et réveil, toujours sous le cadran : la grande date, en tailles fixes, déborde déjà
+ * sur un petit écran.
  */
 @Composable
 fun AnalogClockWithDate(
@@ -115,7 +116,10 @@ fun AnalogClockWithDate(
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         if (showDate) {
-            AnalogDial(now, colors, showSeconds, Modifier.fillMaxHeight(0.8f).aspectRatio(1f))
+            Column(Modifier.fillMaxHeight(0.8f), horizontalAlignment = Alignment.CenterHorizontally) {
+                AnalogDial(now, colors, showSeconds, Modifier.weight(1f).aspectRatio(1f))
+                StatusRow(status, colors, ANALOG_STATUS_TEXT, Modifier.padding(top = ANALOG_STATUS_TEXT.asDp() * 0.4f))
+            }
         } else {
             // Calendrier à côté : le cadran ne dépasse pas sa hauteur (mêmes calculs que MonthCalendar,
             // dont la colonne fait 1/1.4 de celle de l'horloge) : jours de la semaine + semaines du mois.
@@ -141,7 +145,6 @@ fun AnalogClockWithDate(
                 )
                 Text(now.dayOfMonth.toString(), color = colors.primary, fontSize = 140.sp, fontWeight = FontWeight.Bold)
                 Text(now.format(DateTimeFormatter.ofPattern("MMMM", Locale.FRENCH)), color = colors.secondary, fontSize = 30.sp)
-                StatusRow(status, colors, ANALOG_STATUS_TEXT, Modifier.padding(top = 8.dp))
             }
         }
     }

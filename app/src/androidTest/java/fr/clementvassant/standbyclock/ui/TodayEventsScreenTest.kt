@@ -67,6 +67,7 @@ class TodayEventsScreenTest {
                 onOpenSettings = null,
                 clock = clock,
                 nowPlayingSource = { null },
+                deviceStatusSource = { NO_DEVICE_STATUS },
                 eventsSource = { enabled, _: LocalDate -> if (enabled) events else emptyList() }
             )
         }
