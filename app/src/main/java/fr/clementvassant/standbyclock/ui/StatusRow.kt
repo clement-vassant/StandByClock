@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.Dp
@@ -47,7 +48,7 @@ internal fun StatusRow(status: StatusLine, colors: ClockColors, fontSize: TextUn
         status.alarm?.let { alarm ->
             if (status.battery != null) Text("·", color = colors.secondary, fontSize = fontSize)
             Row(
-                Modifier.testTag(TAG_ALARM).semantics(mergeDescendants = true) { stateDescription = "prochain réveil" },
+                Modifier.testTag(TAG_ALARM).semantics(mergeDescendants = true) { contentDescription = "Prochain réveil à $alarm" },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(iconSize * ICON_GAP)
             ) {

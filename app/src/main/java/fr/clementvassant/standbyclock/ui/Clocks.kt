@@ -46,7 +46,7 @@ import kotlin.math.sin
 
 private val dateFormat = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENCH)
 
-/** Texte batterie et réveil du style analogique, et la hauteur (en lignes de ce texte) qu'il prend sous le cadran. */
+/** Texte batterie et réveil du style analogique, et la place réservée sous le cadran (la ligne et sa marge, en lignes). */
 private val ANALOG_STATUS_TEXT = 20.sp
 private const val ANALOG_STATUS_LINES = 2f
 
@@ -122,7 +122,7 @@ fun AnalogClockWithDate(
             BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 val cell = min(maxWidth / CLOCK_PANE_WEIGHT / DAYS_PER_WEEK, maxHeight * calendarHeight / CALENDAR_ROWS)
                 val rows = 0.8f + monthGrid(now.toLocalDate()).weeks
-                // Batterie et réveil se placent juste sous le cadran, qui leur laisse la place d'une ligne.
+                // Batterie et réveil se placent juste sous le cadran, qui leur laisse une ligne et sa marge.
                 val statusSpace = if (status.isEmpty) 0.dp else ANALOG_STATUS_TEXT.asDp() * ANALOG_STATUS_LINES
                 val paneSize = min(maxWidth, maxHeight - statusSpace) * 0.9f
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {

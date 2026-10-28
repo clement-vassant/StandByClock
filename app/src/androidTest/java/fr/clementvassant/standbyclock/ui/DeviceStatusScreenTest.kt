@@ -92,4 +92,13 @@ class DeviceStatusScreenTest {
         rule.onNodeWithTag(TAG_BATTERY).assertIsDisplayed()
         rule.onNodeWithTag(TAG_ALARM).assertIsDisplayed()
     }
+
+    @Test
+    fun analogClockWithoutCalendarShowsTheStatusUnderTheBigDate() {
+        prefs.showCalendar = false
+        show(DeviceStatus(BatteryStatus(percent = 76, charging = true), tomorrowSeven), style = ClockStyle.ANALOG)
+        rule.onNodeWithTag(TAG_CALENDAR).assertDoesNotExist()
+        rule.onNodeWithTag(TAG_BATTERY).assertIsDisplayed()
+        rule.onNodeWithTag(TAG_ALARM).assertIsDisplayed()
+    }
 }
