@@ -166,7 +166,7 @@ Les deux suites tournent dans GitHub Actions sur chaque pull request, avec ktlin
 
 ```bash
 scripts/check.sh        # ktlint, detekt, Android Lint, tests unitaires, APK debug et release
-scripts/check.sh --all  # idem + tests d'interface, et parcours e2e sur l'APK release
+scripts/check.sh --all  # idem + tests d'interface, et parcours courts sur l'APK release
 ```
 
 Le détail (jobs de la CI, conventions de code) est dans [CONTRIBUTING.md](CONTRIBUTING.md).

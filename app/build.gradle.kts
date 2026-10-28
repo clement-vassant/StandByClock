@@ -36,10 +36,6 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    // Les tests d'interface visent l'APK debug ; -PtestBuildType=release fait jouer les parcours e2e sur l'APK
-    // release, passé par R8 comme celui qu'on publie (scripts/connected-tests.sh, CI).
-    testBuildType = providers.gradleProperty("testBuildType").getOrElse("debug")
-
     signingConfigs {
         if (releaseKeystorePath != null) {
             create("release") {
@@ -55,11 +51,10 @@ android {
         release {
             // R8 retire le code et les ressources inutilisés et optimise le reste : APK bien plus léger.
             // Les composants déclarés dans le manifeste (activités, écran de veille, écouteur de notifications)
-            // sont gardés d'office ; proguard-rules.pro ne garde que ce que les parcours e2e appellent directement.
+            // sont gardés d'office. Le module release-smoke vérifie sur cet APK que l'app démarre toujours.
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            testProguardFiles("proguard-test-rules.pro")
             signingConfig = signingConfigs.getByName(if (releaseKeystorePath != null) "release" else "debug")
         }
     }
@@ -71,6 +66,10 @@ android {
         compose = true
         // Expose la version à l'app et aux tests (AppVersionTest).
         buildConfig = true
+    }
+    sourceSets {
+        // Pilote de l'écran de veille, partagé avec le module release-smoke.
+        getByName("androidTest").kotlin.directories.add(rootProject.file("e2e-shared/java").path)
     }
     testOptions {
         // Robolectric (captures Roborazzi) a besoin des ressources de l'app dans les tests JVM.
