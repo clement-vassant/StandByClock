@@ -13,6 +13,17 @@ updates:
         patterns: ["androidx.*"]
       kotlin:
         patterns: ["org.jetbrains.kotlin*"]
+      # Les artefacts Roborazzi (plugin et bibliothèques de test) partagent un numéro de version :
+      # sans groupe, chaque montée ouvrait une PR par artefact.
+      roborazzi:
+        patterns: ["io.github.takahirom.roborazzi*"]
+      # Outils de vérification du code (ktlint, detekt, règles Compose) : une montée ne touche pas l'app,
+      # seulement les contrôles de la CI, donc une seule PR à relire.
+      lint-tools:
+        patterns:
+          - "org.jlleitschuh.gradle.ktlint*"
+          - "io.gitlab.arturbosch.detekt*"
+          - "io.nlopez.compose.rules*"
   - package-ecosystem: github-actions
     directory: /
     schedule:
