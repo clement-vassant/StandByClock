@@ -1,5 +1,6 @@
 package fr.clementvassant.standbyclock
 
+import android.os.SystemClock
 import android.service.dreams.DreamService
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
@@ -80,12 +81,11 @@ class StandByDreamService :
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
         // Extinction automatique : pas d'image fixe pendant des heures.
-        val minutes = ClockPrefs(this).autoOffMinutes
-        if (minutes > 0) {
-            autoOff = lifecycleScope.launch {
-                delay(minutes * MILLIS_PER_MINUTE)
-                finish()
-            }
+        val now = SystemClock.elapsedRealtime()
+        val remaining = autoOffDelayMillis(launchedAt = now, ClockPrefs(this).autoOffMinutes, now) ?: return
+        autoOff = lifecycleScope.launch {
+            delay(remaining)
+            finish()
         }
     }
 
