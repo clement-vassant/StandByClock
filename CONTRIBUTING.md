@@ -10,26 +10,26 @@
 
 ```bash
 mise install           # Java 17, une seule fois
-scripts/check.sh       # ktlint, detekt, Android Lint, tests unitaires, captures de référence, APK
-scripts/check.sh --all # idem + tests d'interface, parcours e2e, et parcours courts sur l'APK release (émulateur ou téléphone branché)
+mise run check         # ktlint, detekt, Android Lint, tests unitaires, captures de référence, APK
+mise run check:all     # idem + tests d'interface, parcours e2e, et parcours courts sur l'APK release (émulateur ou téléphone branché)
 ```
 
-`mise exec -- ./gradlew ktlintFormat` corrige automatiquement la mise en forme.
+`mise run format` corrige automatiquement la mise en forme. Les tâches sont définies dans `mise.toml` (`mise tasks` les liste) : chaque job de la CI lance la même que celle qu'on lance en local, donc les deux ne peuvent pas diverger.
 
 ## Ce que vérifie la CI
 
-| Job | Commande | Rôle |
+| Job | Tâche mise | Rôle |
 |---|---|---|
-| Lint | `ktlintCheck detekt lintDebug` | style Kotlin (ktlint + règles Compose), code smells (detekt + règles Compose), erreurs Android (Lint, avertissements bloquants) |
-| Tests unitaires | `testDebugUnitTest` | logique pure : plage de nuit, calendrier, anti-marquage, musique… |
-| Captures de référence | `verifyRoborazziDebug` | l'écran de l'horloge (3 styles, jour/nuit, paysage/portrait, musique, sans calendrier, événements du jour, 12 h, *Toujours paysage*, anglais, batterie et prochain réveil) et celui des réglages en français et en anglais, rendus sur la JVM et comparé aux images de `app/src/test/screenshots/` ; en cas d'écart, l'artefact `screenshot-diffs` montre la différence |
-| Tests d'interface et parcours e2e | `scripts/connected-tests.sh` | tests Compose à heure fixe, puis parcours de bout en bout UI Automator (lanceur, réglages, autorisation de l'agenda, orientation Automatique et Toujours paysage, écran de veille, batterie et prochain réveil) sur un émulateur API 34 ; puis le module `release-smoke` ouvre l'horloge, les réglages et l'écran de veille sur l'APK release passé par R8 (tests dans leur propre processus, qui pilotent l'app par l'écran seulement) ; captures dans l'artefact `e2e-captures` |
-| APK debug et release | `assembleDebug assembleRelease` | l'app compile dans les deux variantes ; la release passe par R8 (code et ressources inutilisés retirés, règles dans `app/proguard-rules.pro`) avec le profil de référence `app/src/main/baseline-prof.txt` ; l'APK debug est téléchargeable dans les artefacts du run |
+| Lint | `lint` (`ktlintCheck detekt lintDebug`) | style Kotlin (ktlint + règles Compose), code smells (detekt + règles Compose), erreurs Android (Lint, avertissements bloquants) |
+| Tests unitaires | `test` (`testDebugUnitTest`) | logique pure : plage de nuit, calendrier, anti-marquage, musique… |
+| Captures de référence | `screenshots` (`verifyRoborazziDebug`) | l'écran de l'horloge (3 styles, jour/nuit, paysage/portrait, musique, sans calendrier, événements du jour, 12 h, *Toujours paysage*, anglais, batterie et prochain réveil) et celui des réglages en français et en anglais, rendus sur la JVM et comparé aux images de `app/src/test/screenshots/` ; en cas d'écart, l'artefact `screenshot-diffs` montre la différence |
+| Tests d'interface et parcours e2e | `test:connected` (`scripts/connected-tests.sh`) | tests Compose à heure fixe, puis parcours de bout en bout UI Automator (lanceur, réglages, autorisation de l'agenda, orientation Automatique et Toujours paysage, écran de veille, batterie et prochain réveil) sur un émulateur API 34 ; puis le module `release-smoke` ouvre l'horloge, les réglages et l'écran de veille sur l'APK release passé par R8 (tests dans leur propre processus, qui pilotent l'app par l'écran seulement) ; captures dans l'artefact `e2e-captures` |
+| APK debug et release | `build` (`assembleDebug assembleRelease`) | l'app compile dans les deux variantes ; la release passe par R8 (code et ressources inutilisés retirés, règles dans `app/proguard-rules.pro`) avec le profil de référence `app/src/main/baseline-prof.txt` ; l'APK debug est téléchargeable dans les artefacts du run |
 | `ci-ok` | | vert seulement si tous les autres le sont ; c'est lui que la protection de `main` exige |
 
 ### Captures de référence
 
-Un changement visible modifie les images de `app/src/test/screenshots/` : on les régénère avec `./gradlew recordRoborazziDebug` et elles apparaissent dans le diff de la PR, à relire comme le code. Elles sont rendues sous Linux comme sur la CI ; sur macOS, `scripts/check.sh` produit le rapport de comparaison sans échouer, car le rendu des polices diffère un peu. Pour régénérer sans Linux, prendre les images `*_actual.png` de l'artefact `screenshot-diffs` de la CI.
+Un changement visible modifie les images de `app/src/test/screenshots/` : on les régénère avec `mise run screenshots:record` et elles apparaissent dans le diff de la PR, à relire comme le code. Elles sont rendues sous Linux comme sur la CI ; sur macOS, `mise run screenshots` et `mise run check` produisent le rapport de comparaison sans échouer, car le rendu des polices diffère un peu. Pour régénérer sans Linux, prendre les images `*_actual.png` de l'artefact `screenshot-diffs` de la CI.
 
 ### Parcours e2e
 
