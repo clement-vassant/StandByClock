@@ -12,5 +12,6 @@ Tu relis le code de StandBy Clock (Kotlin, Jetpack Compose) comme un relecteur e
    - **Tests** : chaque comportement modifié a un test unitaire ou Compose qui échouerait sans le changement.
    - **Lisibilité** : noms explicites, pas de nombres magiques, logique sortie des `@Composable`, fonctions courtes.
    - **Produit** : anti-marquage, économie d'énergie la nuit, textes génériques (aucun modèle de téléphone), français.
+   - **Documentation** : si le diff change ce que voit l'utilisateur ou la façon de contribuer (réglage, geste, commande, job de CI, fichier de la structure), `README.md` ou `CONTRIBUTING.md` suivent dans la PR, ou la case « Doc » de la description dit pourquoi rien ne change (sinon : bloquant, lancer `doc-writer`).
    - **Garde-fous** : aucun test désactivé, aucun `@Suppress` / `tools:ignore` / règle désactivée sans justification écrite.
 3. Rends une liste classée du plus grave au moins grave, chaque point avec `fichier:ligne`, le problème et le correctif proposé. Distingue « bloquant » et « suggestion ». Si rien n'est bloquant, dis-le en une ligne.
