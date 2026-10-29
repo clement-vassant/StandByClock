@@ -69,7 +69,8 @@ fun agendaLines(agenda: List<CalendarEvent>, maxLines: Int = MAX_AGENDA_LINES): 
 
 /**
  * Heure affichée devant le titre : toute la journée, l'heure de fin d'un événement en cours (« → 15:00 »,
- * seule info utile pendant l'événement ; « en cours » s'il finit un autre jour), sinon l'heure de début.
+ * seule info utile pendant l'événement ; « en cours » s'il finit un autre jour), sinon l'heure de début,
+ * écrite en 12 h (avec AM/PM) ou en 24 h comme le téléphone.
  * Le libellé lui-même vient des ressources, dans la langue de l'appareil.
  */
 sealed interface AgendaTime {
@@ -82,13 +83,13 @@ sealed interface AgendaTime {
     data object Ongoing : AgendaTime
 }
 
-fun agendaTime(event: CalendarEvent, now: ZonedDateTime): AgendaTime {
+fun agendaTime(event: CalendarEvent, now: ZonedDateTime, hourFormat: HourFormat): AgendaTime {
     val nowMillis = now.toInstant().toEpochMilli()
     val end = Instant.ofEpochMilli(event.end).atZone(now.zone)
     return when {
         event.allDay -> AgendaTime.AllDay
-        event.begin > nowMillis -> AgendaTime.StartsAt(Instant.ofEpochMilli(event.begin).atZone(now.zone).hhmm())
-        end.toLocalDate() == now.toLocalDate() -> AgendaTime.EndsAt(end.hhmm())
+        event.begin > nowMillis -> AgendaTime.StartsAt(Instant.ofEpochMilli(event.begin).atZone(now.zone).scheduleTime(hourFormat))
+        end.toLocalDate() == now.toLocalDate() -> AgendaTime.EndsAt(end.scheduleTime(hourFormat))
         else -> AgendaTime.Ongoing
     }
 }
@@ -96,7 +97,7 @@ fun agendaTime(event: CalendarEvent, now: ZonedDateTime): AgendaTime {
 /** Événement en cours (ou de toute la journée) : son heure est en accent. */
 fun isHappeningNow(event: CalendarEvent, now: ZonedDateTime): Boolean = event.allDay || event.begin <= now.toInstant().toEpochMilli()
 
-private fun ZonedDateTime.hhmm() = "%02d:%02d".format(hour, minute)
+private fun ZonedDateTime.scheduleTime(hourFormat: HourFormat) = scheduleTime(hour, minute, hourFormat)
 
 /** Libellé d'un agenda dans les réglages : son nom, et le compte s'il est différent. */
 fun CalendarInfo.label(): String = if (account.isBlank() || account == name) name else "$name ($account)"

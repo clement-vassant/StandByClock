@@ -33,7 +33,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import fr.clementvassant.standbyclock.DAYS_PER_WEEK
+import fr.clementvassant.standbyclock.HourFormat
 import fr.clementvassant.standbyclock.StatusLine
+import fr.clementvassant.standbyclock.clockHour
+import fr.clementvassant.standbyclock.clockTime
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZonedDateTime
@@ -49,8 +52,6 @@ private const val ANALOG_STATUS_LINES = 2f
 /** Hauteur du calendrier en cellules : en-tête du mois, jours de la semaine et 6 semaines au plus. */
 private const val CALENDAR_ROWS = 8.5f
 
-private fun ZonedDateTime.hhmm() = "%02d:%02d".format(hour, minute)
-
 /** Convertit une taille en dp en sp, pour que les chiffres suivent la place disponible. */
 @Composable
 internal fun Dp.asSp(): TextUnit = with(LocalDensity.current) { toSp() }
@@ -61,6 +62,7 @@ fun DigitalClock(
     now: ZonedDateTime,
     colors: ClockColors,
     showSeconds: Boolean,
+    hourFormat: HourFormat,
     modifier: Modifier = Modifier,
     status: StatusLine = StatusLine()
 ) {
@@ -69,7 +71,7 @@ fun DigitalClock(
         val small = min(maxHeight * 0.08f, maxWidth * 0.045f).asSp()
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("%02d".format(now.hour), color = colors.primary, fontSize = digits, fontWeight = FontWeight.Bold)
+                Text(clockHour(now.hour, hourFormat), color = colors.primary, fontSize = digits, fontWeight = FontWeight.Bold)
                 Text(
                     ":",
                     color = if (!showSeconds || now.second % 2 == 0) colors.secondary else colors.secondary.copy(alpha = 0.3f),
@@ -177,12 +179,24 @@ private fun DrawScope.drawRadial(c: Offset, fraction: Float, from: Float, to: Fl
 
 /** Style 3 : très épuré, chiffres fins, peu de pixels allumés (idéal la nuit) ; batterie et réveil après la date. */
 @Composable
-fun MinimalClock(now: ZonedDateTime, colors: ClockColors, modifier: Modifier = Modifier, status: StatusLine = StatusLine()) {
+fun MinimalClock(
+    now: ZonedDateTime,
+    colors: ClockColors,
+    hourFormat: HourFormat,
+    modifier: Modifier = Modifier,
+    status: StatusLine = StatusLine()
+) {
     BoxWithConstraints(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         val digits = min(maxHeight * 0.7f, maxWidth * 0.3f).asSp()
         val small = min(maxHeight * 0.06f, maxWidth * 0.03f).asSp()
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(now.hhmm(), color = colors.primary, fontSize = digits, fontWeight = FontWeight.Thin, fontFamily = FontFamily.SansSerif)
+            Text(
+                clockTime(now.hour, now.minute, hourFormat),
+                color = colors.primary,
+                fontSize = digits,
+                fontWeight = FontWeight.Thin,
+                fontFamily = FontFamily.SansSerif
+            )
             DateAndStatus(small) {
                 Text(
                     now.format(fullDateFormat()),

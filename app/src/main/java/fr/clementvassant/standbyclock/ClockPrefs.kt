@@ -100,5 +100,3 @@ fun themeFromExtra(value: String?): ThemeMode? = when (value) {
     "night" -> ThemeMode.NIGHT
     else -> null
 }
-
-fun formatMinutes(minutes: Int) = "%02d:%02d".format(minutes / MINUTES_PER_HOUR, minutes % MINUTES_PER_HOUR)

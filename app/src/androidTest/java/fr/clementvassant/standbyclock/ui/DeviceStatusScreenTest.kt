@@ -27,6 +27,10 @@ class DeviceStatusScreenTest {
     @get:Rule
     val rule = createComposeRule()
 
+    // L'heure du réveil suit le réglage 12 h / 24 h du téléphone : 24 h sauf mention contraire.
+    @get:Rule
+    val hourFormat = SystemHourFormatRule()
+
     private val context: Context = ApplicationProvider.getApplicationContext()
     private lateinit var prefs: ClockPrefs
 
@@ -62,6 +66,13 @@ class DeviceStatusScreenTest {
         show(DeviceStatus(BatteryStatus(percent = 76, charging = true), tomorrowSeven))
         rule.onNodeWithTag(TAG_BATTERY).assertIsDisplayed().assertTextEquals("76 %")
         rule.onNodeWithTag(TAG_ALARM).assertIsDisplayed().assertTextEquals("07:00")
+    }
+
+    @Test
+    fun phoneIn12HoursShowsTheAlarmWithAmPm() {
+        hourFormat.set(SystemHourFormatRule.TWELVE_HOURS)
+        show(DeviceStatus(nextAlarmMillis = tomorrowSeven))
+        rule.onNodeWithTag(TAG_ALARM).assertIsDisplayed().assertTextEquals("07:00 AM")
     }
 
     @Test

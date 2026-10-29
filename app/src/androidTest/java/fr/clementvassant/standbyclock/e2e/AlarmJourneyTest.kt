@@ -12,6 +12,7 @@ import androidx.test.uiautomator.uiAutomator
 import fr.clementvassant.standbyclock.ClockPrefs
 import fr.clementvassant.standbyclock.MainActivity
 import fr.clementvassant.standbyclock.ThemeMode
+import fr.clementvassant.standbyclock.ui.SystemHourFormatRule
 import fr.clementvassant.standbyclock.ui.TAG_ALARM
 import fr.clementvassant.standbyclock.ui.TAG_BATTERY
 import java.time.ZonedDateTime
@@ -19,6 +20,7 @@ import java.time.format.DateTimeFormatter
 import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -29,6 +31,10 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class AlarmJourneyTest {
+    // Heures attendues en 24 h, quelle que soit la langue de l'émulateur (celui de la CI est en 12 h).
+    @get:Rule
+    val hourFormat = SystemHourFormatRule()
+
     private val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
     private val alarms = context.getSystemService(AlarmManager::class.java)

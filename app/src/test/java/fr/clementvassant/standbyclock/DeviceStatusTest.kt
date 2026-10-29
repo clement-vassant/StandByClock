@@ -52,6 +52,14 @@ class DeviceStatusTest {
     }
 
     @Test
+    fun `téléphone en 12 heures, le réveil s'écrit comme un horaire de l'agenda`() {
+        val morning = alarmIn(hours = 10, minutes = 7)
+        val evening = alarmIn(hours = 20, minutes = 7)
+        assertEquals("07:00 AM", statusLine(null, morning, now, night = false, HourFormat.H12).alarm)
+        assertEquals("05:00 PM", statusLine(null, evening, now, night = true, HourFormat.H12).alarm)
+    }
+
+    @Test
     fun `un réveil au-delà de 24 heures ou passé ne s'affiche pas`() {
         assertEquals("20:53", status(alarm = alarmIn(hours = NEXT_ALARM_HORIZON_HOURS)).alarm)
         assertNull(status(alarm = alarmIn(hours = NEXT_ALARM_HORIZON_HOURS, minutes = 1)).alarm)

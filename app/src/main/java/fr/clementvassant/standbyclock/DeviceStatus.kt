@@ -16,7 +16,6 @@ import androidx.core.content.ContextCompat
 import java.time.Duration
 import java.time.Instant
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 
 /** Sous ce niveau (en %), la batterie s'affiche même téléphone débranché. */
 const val LOW_BATTERY_PERCENT = 20
@@ -25,8 +24,6 @@ const val LOW_BATTERY_PERCENT = 20
 const val NEXT_ALARM_HORIZON_HOURS = 24L
 
 private const val FULL_PERCENT = 100
-
-private val alarmFormat = DateTimeFormatter.ofPattern("HH:mm")
 
 /** Niveau de la batterie (en %) et branchement sur un chargeur. */
 data class BatteryStatus(val percent: Int, val charging: Boolean)
@@ -46,21 +43,30 @@ data class StatusLine(val battery: BatteryLabel? = null, val alarm: String? = nu
  * Batterie : en charge (le jour seulement : la nuit on ne veut que l'essentiel), ou faible hors charge.
  * Réveil : seulement s'il sonne dans les [NEXT_ALARM_HORIZON_HOURS] heures, jour et nuit.
  */
-fun statusLine(battery: BatteryStatus?, nextAlarmMillis: Long?, now: ZonedDateTime, night: Boolean): StatusLine {
+fun statusLine(
+    battery: BatteryStatus?,
+    nextAlarmMillis: Long?,
+    now: ZonedDateTime,
+    night: Boolean,
+    hourFormat: HourFormat = HourFormat.H24
+): StatusLine {
     val low = battery != null && !battery.charging && battery.percent < LOW_BATTERY_PERCENT
     val shownBattery = battery?.takeIf { low || (it.charging && !night) }
     return StatusLine(
         battery = shownBattery?.let { BatteryLabel("${it.percent} %", charging = it.charging, low = low) },
-        alarm = nextAlarmMillis?.let { nextAlarmLabel(it, now) }
+        alarm = nextAlarmMillis?.let { nextAlarmLabel(it, now, hourFormat) }
     )
 }
 
-/** Heure du réveil (« 07:00 ») dans le fuseau de l'horloge, s'il sonne dans les 24 heures ; sinon null. */
-fun nextAlarmLabel(alarmMillis: Long, now: ZonedDateTime): String? {
+/**
+ * Heure du réveil dans le fuseau de l'horloge, s'il sonne dans les 24 heures ; sinon null. Écrite comme un horaire
+ * de l'agenda : « 07:00 », ou « 07:00 AM » en 12 h.
+ */
+fun nextAlarmLabel(alarmMillis: Long, now: ZonedDateTime, hourFormat: HourFormat = HourFormat.H24): String? {
     val alarm = Instant.ofEpochMilli(alarmMillis).atZone(now.zone)
     val delay = Duration.between(now, alarm)
     if (delay.isNegative || delay > Duration.ofHours(NEXT_ALARM_HORIZON_HOURS)) return null
-    return alarm.format(alarmFormat)
+    return scheduleTime(alarm.hour, alarm.minute, hourFormat)
 }
 
 /** Niveau en % à partir des extras de l'état de la batterie ; null s'ils manquent. */

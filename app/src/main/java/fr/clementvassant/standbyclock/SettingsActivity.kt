@@ -7,6 +7,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.text.format.DateFormat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -39,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -100,10 +102,11 @@ class SettingsActivity : ComponentActivity() {
         }
     }
 
+    // Même écriture que le reste du téléphone : cadran 12 h avec AM/PM, ou 24 h.
     private fun pickTime(initial: Int, onPicked: (Int) -> Unit) {
         TimePickerDialog(this, { _, h, m ->
             onPicked(h * MINUTES_PER_HOUR + m)
-        }, initial / MINUTES_PER_HOUR, initial % MINUTES_PER_HOUR, true).show()
+        }, initial / MINUTES_PER_HOUR, initial % MINUTES_PER_HOUR, DateFormat.is24HourFormat(this)).show()
     }
 
     private fun openScreenSaverSettings() {
@@ -141,11 +144,14 @@ internal fun SettingsScreen(
     var autoOff by remember { mutableIntStateOf(prefs.autoOffMinutes) }
     var media by remember { mutableStateOf(prefs.showMedia) }
     var orientation by remember { mutableStateOf(prefs.orientation) }
-    // Revérifié au retour des réglages Android.
+    // Revérifiés au retour des réglages Android.
     var mediaAccess by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    var hourFormat by remember { mutableStateOf(systemHourFormat(context)) }
     val currentHasMediaAccess by rememberUpdatedState(hasMediaAccess)
     LifecycleResumeEffect(Unit) {
         mediaAccess = currentHasMediaAccess()
+        hourFormat = systemHourFormat(context)
         onPauseOrDispose { }
     }
 
@@ -227,14 +233,14 @@ internal fun SettingsScreen(
                             nightStart = it
                             prefs.nightStart = it
                         }
-                    }) { Text(formatMinutes(nightStart)) }
+                    }) { Text(scheduleTime(nightStart, hourFormat)) }
                     Text(stringResource(R.string.settings_night_to))
                     OutlinedButton(onClick = {
                         pickTime(nightEnd) {
                             nightEnd = it
                             prefs.nightEnd = it
                         }
-                    }) { Text(formatMinutes(nightEnd)) }
+                    }) { Text(scheduleTime(nightEnd, hourFormat)) }
                 }
             }
         }

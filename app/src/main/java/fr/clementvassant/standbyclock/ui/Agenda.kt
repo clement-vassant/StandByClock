@@ -30,6 +30,7 @@ import fr.clementvassant.standbyclock.AgendaLines
 import fr.clementvassant.standbyclock.AgendaTime
 import fr.clementvassant.standbyclock.CalendarEvent
 import fr.clementvassant.standbyclock.DAYS_PER_WEEK
+import fr.clementvassant.standbyclock.HourFormat
 import fr.clementvassant.standbyclock.MAX_AGENDA_LINES
 import fr.clementvassant.standbyclock.R
 import fr.clementvassant.standbyclock.agendaTime
@@ -46,8 +47,17 @@ import java.time.temporal.WeekFields
  */
 private const val AGENDA_ROWS = 1f + 1.8f + 0.6f + MAX_AGENDA_LINES
 
-/** Largeur de la colonne des heures (« 14:30 », « Journée », « → 15:00 »), en lignes de liste. */
-private const val AGENDA_TIME_WIDTH = 2.4f
+/** Largeur de la colonne des heures en 24 h (« 14:30 », « Journée », « → 15:00 »), en lignes de liste. */
+private const val AGENDA_TIME_WIDTH_24H = 2.4f
+
+/** En 12 h, la colonne fait place à AM/PM (« → 03:00 PM »). */
+private const val AGENDA_TIME_WIDTH_12H = 3.4f
+
+/** Largeur de la colonne des heures selon l'écriture des heures, en lignes de liste. */
+fun agendaTimeWidth(hourFormat: HourFormat): Float = when (hourFormat) {
+    HourFormat.H24 -> AGENDA_TIME_WIDTH_24H
+    HourFormat.H12 -> AGENDA_TIME_WIDTH_12H
+}
 
 /** Les sept jours (lundi à dimanche) de la semaine de [date]. */
 fun weekOf(date: LocalDate): List<LocalDate> {
@@ -63,7 +73,7 @@ fun isoWeekNumber(date: LocalDate): Int = date.get(WeekFields.ISO.weekOfWeekBase
  * Texte seulement, aujourd'hui entouré d'un anneau, sans fond : peu de pixels allumés (OLED).
  */
 @Composable
-fun WeekAgenda(now: ZonedDateTime, lines: AgendaLines, colors: ClockColors, modifier: Modifier = Modifier) {
+fun WeekAgenda(now: ZonedDateTime, lines: AgendaLines, colors: ClockColors, hourFormat: HourFormat, modifier: Modifier = Modifier) {
     BoxWithConstraints(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         val line = min(maxWidth / DAYS_PER_WEEK, maxHeight / AGENDA_ROWS)
         val text = (line * 0.42f).asSp()
@@ -74,7 +84,7 @@ fun WeekAgenda(now: ZonedDateTime, lines: AgendaLines, colors: ClockColors, modi
                 Box(Modifier.fillMaxWidth().height(1.dp).background(colors.secondary.copy(alpha = 0.4f)))
             }
             for (event in lines.shown) {
-                AgendaLine(event, now, colors, line, text)
+                AgendaLine(event, now, hourFormat, colors, line, text)
             }
             if (lines.more > 0) {
                 Row(Modifier.fillMaxWidth().height(line), verticalAlignment = Alignment.CenterVertically) {
@@ -142,13 +152,13 @@ private fun WeekRow(today: LocalDate, colors: ClockColors, line: Dp) {
 
 /** Une ligne : l'heure en accent si l'événement est en cours ou dure toute la journée, puis le titre. */
 @Composable
-private fun AgendaLine(event: CalendarEvent, now: ZonedDateTime, colors: ClockColors, line: Dp, text: TextUnit) {
+private fun AgendaLine(event: CalendarEvent, now: ZonedDateTime, hourFormat: HourFormat, colors: ClockColors, line: Dp, text: TextUnit) {
     val current = isHappeningNow(event, now)
     val untitled = stringResource(R.string.agenda_untitled)
     Row(Modifier.fillMaxWidth().height(line), verticalAlignment = Alignment.CenterVertically) {
         Text(
-            agendaTimeLabel(agendaTime(event, now)),
-            Modifier.width(line * AGENDA_TIME_WIDTH),
+            agendaTimeLabel(agendaTime(event, now, hourFormat)),
+            Modifier.width(line * agendaTimeWidth(hourFormat)),
             color = if (current) colors.accent else colors.secondary,
             fontSize = text,
             maxLines = 1
