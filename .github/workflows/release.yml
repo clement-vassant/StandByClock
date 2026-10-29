@@ -37,7 +37,7 @@ jobs:
         run: |
           echo "::error::Une release se lance depuis main, pas depuis $GITHUB_REF_NAME."
           exit 1
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Calcul seul (dry_run) : le tag n'est créé qu'avec la release, une fois l'APK compilé.
       # feat = mineure, fix/perf/deps/revert = correctif, « ! » ou BREAKING CHANGE = majeure, autre = correctif.
       - name: Calculer la version et les notes
