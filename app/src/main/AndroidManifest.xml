@@ -26,6 +26,12 @@
             <meta-data
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
+            <!-- Android 16 ignore l'orientation demandée sur les écrans de plus de 600 dp (pliable déplié, tablette) :
+                 sans cette exemption, « Toujours paysage » ne tiendrait plus. Android ne l'honore plus dès targetSdk 37,
+                 à revoir à ce moment-là. -->
+            <property
+                android:name="android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY"
+                android:value="true" />
         </activity>
 
         <activity
