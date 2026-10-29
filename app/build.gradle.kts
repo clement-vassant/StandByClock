@@ -82,11 +82,13 @@ android {
     }
     lint {
         // Les avertissements importants font échouer la CI ; les avertissements de mise à jour de dépendances
-        // sont suivis par Dependabot et ne bloquent pas.
+        // sont suivis par Dependabot et ne bloquent pas. OldTargetApi réclame la dernière API (37, celle de
+        // compileSdk) : on vise volontairement 36 tant que l'exemption d'orientation sur grand écran est
+        // nécessaire (voir AndroidManifest.xml et TargetSdkTest).
         warningsAsErrors = true
         abortOnError = true
         checkDependencies = true
-        disable += setOf("GradleDependency", "NewerVersionAvailable", "AndroidGradlePluginVersion")
+        disable += setOf("GradleDependency", "NewerVersionAvailable", "AndroidGradlePluginVersion", "OldTargetApi")
     }
 }
 
