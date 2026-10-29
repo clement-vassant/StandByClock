@@ -10,12 +10,14 @@ import org.junit.Test
 class VisibleTextsTest {
     // Les tests unitaires tournent depuis le dossier du module app.
     private val strings = File("src/main/res/values/strings.xml").readText()
+    private val english = File("src/main/res/values-en/strings.xml").readText()
     private val settings = File("src/main/java/fr/clementvassant/standbyclock/SettingsActivity.kt").readText()
 
     @Test
     fun `no device-specific wording in visible texts`() {
         for (word in listOf("Fold", "Galaxy")) {
             assertFalse("strings.xml mentionne $word", word in strings)
+            assertFalse("values-en/strings.xml mentionne $word", word in english)
             assertFalse("SettingsActivity mentionne $word", word in settings)
         }
     }
@@ -50,5 +52,19 @@ class VisibleTextsTest {
         val routines = Regex("<string name=\"help_routines\">(.*)</string>").find(strings)!!.groupValues[1]
         assertTrue(routines, "Tasker" in routines)
         assertTrue(routines, "routines ou outils d\\'automatisation" in routines)
+        val routinesEn = Regex("<string name=\"help_routines\">(.*)</string>").find(english)!!.groupValues[1]
+        assertTrue(routinesEn, "Tasker" in routinesEn)
+        assertTrue(routinesEn, "routines or automation tools" in routinesEn)
+    }
+
+    @Test
+    fun `every text is translated to english`() {
+        // Un texte oublié dans values-en s'afficherait en français au milieu de l'anglais.
+        fun names(xml: String, translatableOnly: Boolean) = Regex("""<(string|plurals|string-array) name="([a-z_]+)"([^>]*)>""")
+            .findAll(xml)
+            .filterNot { translatableOnly && "translatable=\"false\"" in it.groupValues[3] }
+            .map { it.groupValues[2] }
+            .toSet()
+        assertEquals(names(strings, translatableOnly = true), names(english, translatableOnly = false))
     }
 }

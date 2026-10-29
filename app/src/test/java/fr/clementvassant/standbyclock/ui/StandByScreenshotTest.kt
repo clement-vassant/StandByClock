@@ -29,6 +29,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -56,6 +57,8 @@ class StandByScreenshotTest(private val case: Case) {
 
     @Before
     fun prefs() {
+        // Téléphone américain : textes en anglais, semaine du dimanche au samedi.
+        if (case.english) RuntimeEnvironment.setQualifiers("+en-rUS")
         context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE).edit().clear().commit()
         prefs = ClockPrefs(context).apply {
             style = case.style
@@ -105,7 +108,7 @@ class StandByScreenshotTest(private val case: Case) {
 
     /**
      * Un cas : style, jour ou nuit, taille d'écran (dp), événements du jour, calendrier affiché ou masqué,
-     * musique en cours, et horloge tournée par « Toujours paysage ».
+     * musique en cours, horloge tournée par « Toujours paysage », et langue (anglais des États-Unis).
      */
     class Case(
         val style: ClockStyle,
@@ -115,6 +118,7 @@ class StandByScreenshotTest(private val case: Case) {
         val showCalendar: Boolean = true,
         val media: Boolean = false,
         val forceLandscape: Boolean = false,
+        val english: Boolean = false,
         private val suffix: String = ""
     ) {
         val width: Dp get() = if (portrait) SHORT_SIDE else LONG_SIDE
@@ -124,7 +128,7 @@ class StandByScreenshotTest(private val case: Case) {
                 style.name.lowercase(),
                 if (night) "nuit" else "jour",
                 if (portrait) "portrait" else "paysage"
-            ).joinToString("-") + suffix
+            ).joinToString("-") + suffix + if (english) "-anglais" else ""
 
         override fun toString() = name
     }
@@ -164,7 +168,11 @@ class StandByScreenshotTest(private val case: Case) {
             // La nuit, la pochette passe en gris et s'atténue encore (OLED).
             Case(ClockStyle.DIGITAL, night = true, portrait = false, showCalendar = false, media = true, suffix = "-musique-carte"),
             // Écran de veille en portrait avec « Toujours paysage » : tout l'écran est couché d'un quart de tour.
-            Case(ClockStyle.DIGITAL, night = false, portrait = true, forceLandscape = true, suffix = "-toujours-paysage")
+            Case(ClockStyle.DIGITAL, night = false, portrait = true, forceLandscape = true, suffix = "-toujours-paysage"),
+            // En anglais aux États-Unis : date, mois et semaine du dimanche au samedi, événements, grande date.
+            Case(ClockStyle.DIGITAL, night = false, portrait = false, english = true),
+            Case(ClockStyle.DIGITAL, night = false, portrait = false, events = TODAY_EVENTS, english = true, suffix = "-evenements"),
+            Case(ClockStyle.ANALOG, night = false, portrait = false, showCalendar = false, english = true, suffix = "-sans-calendrier")
         )
     }
 }

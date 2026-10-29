@@ -10,10 +10,13 @@ import androidx.test.uiautomator.uiAutomator
 import fr.clementvassant.standbyclock.ClockPrefs
 import fr.clementvassant.standbyclock.ClockStyle
 import fr.clementvassant.standbyclock.OrientationMode
+import fr.clementvassant.standbyclock.R
 import fr.clementvassant.standbyclock.ui.TAG_SCREEN
 import fr.clementvassant.standbyclock.ui.clockTag
+import fr.clementvassant.standbyclock.ui.dateFormatter
+import fr.clementvassant.standbyclock.ui.dateLocale
+import fr.clementvassant.standbyclock.ui.fullDatePattern
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 import org.junit.After
 import org.junit.Assert.assertTrue
@@ -78,14 +81,10 @@ class ScreenSaverJourneyTest {
         assertTrue("L'écran de veille est resté affiché", device.wait(Until.gone(By.res(TAG_SCREEN)), E2e.SCREEN_TIMEOUT_MS))
     }
 
-    /** La ligne de date sous les chiffres de l'horloge numérique (« Jeudi 22 octobre »). */
+    /** La ligne de date sous les chiffres de l'horloge numérique (« Jeudi 22 octobre »), formatée comme dans `Clocks.kt`. */
     private fun UiAutomatorTestScope.dateLine() = byTag(clockTag(ClockStyle.DIGITAL)).let { clock ->
-        val today = LocalDate.now().format(DATE_FORMAT).replaceFirstChar { it.uppercase() }
+        val locale = dateLocale(E2e.context.getString(R.string.date_language), Locale.getDefault())
+        val today = LocalDate.now().format(dateFormatter(fullDatePattern(locale), locale)).replaceFirstChar { it.uppercase() }
         checkNotNull(clock.wait(Until.findObject(By.text(today)), E2e.SCREEN_TIMEOUT_MS)) { "Date « $today » absente de l'horloge" }
-    }
-
-    private companion object {
-        /** Le format de la date de l'horloge numérique (`Clocks.kt`). */
-        val DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENCH)
     }
 }

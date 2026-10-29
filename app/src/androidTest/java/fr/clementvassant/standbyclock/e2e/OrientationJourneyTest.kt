@@ -13,6 +13,7 @@ import androidx.test.uiautomator.uiAutomator
 import fr.clementvassant.standbyclock.ClockPrefs
 import fr.clementvassant.standbyclock.MainActivity
 import fr.clementvassant.standbyclock.OrientationMode
+import fr.clementvassant.standbyclock.R
 import fr.clementvassant.standbyclock.SettingsActivity
 import fr.clementvassant.standbyclock.ui.TAG_SCREEN
 import fr.clementvassant.standbyclock.ui.TAG_SETTINGS
@@ -75,8 +76,9 @@ class OrientationJourneyTest {
     fun alwaysLandscapeChosenInSettingsKeepsTheClockInLandscapeWithThePhoneUpright() = uiAutomator {
         device.setOrientationPortrait()
         E2e.open(SettingsActivity::class.java)
-        val choice = byTag(TAG_SETTINGS).scrollUntil(Direction.DOWN, Until.findObject(By.text(ALWAYS_LANDSCAPE)))
-        assertNotNull("Choix « $ALWAYS_LANDSCAPE » introuvable dans les réglages", choice)
+        val alwaysLandscape = E2e.context.getString(R.string.orientation_landscape)
+        val choice = byTag(TAG_SETTINGS).scrollUntil(Direction.DOWN, Until.findObject(By.text(alwaysLandscape)))
+        assertNotNull("Choix « $alwaysLandscape » introuvable dans les réglages", choice)
         choice.click()
         assertEquals(OrientationMode.LANDSCAPE, ClockPrefs(E2e.context).orientation)
 
@@ -94,9 +96,5 @@ class OrientationJourneyTest {
     private fun UiAutomatorTestScope.clockScreen(landscape: Boolean): UiObject2 = onElement(E2e.SCREEN_TIMEOUT_MS) {
         val bounds = Rect().also(::getBoundsInScreen)
         viewIdResourceName == TAG_SCREEN && (bounds.width() > bounds.height()) == landscape
-    }
-
-    private companion object {
-        const val ALWAYS_LANDSCAPE = "Toujours paysage"
     }
 }

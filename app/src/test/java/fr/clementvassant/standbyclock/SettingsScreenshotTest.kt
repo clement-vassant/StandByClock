@@ -12,6 +12,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -36,6 +37,7 @@ class SettingsScreenshotTest(private val case: Case) {
 
     @Before
     fun prefs() {
+        if (case.english) RuntimeEnvironment.setQualifiers("+en-rUS")
         context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE).edit().clear().commit()
         prefs = ClockPrefs(context)
         if (case.configured) {
@@ -70,9 +72,10 @@ class SettingsScreenshotTest(private val case: Case) {
         rule.onNodeWithTag(TAG_SETTINGS).captureRoboImage("src/test/screenshots/${case.name}.png", roborazziOptions = options)
     }
 
-    /** Un cas : premier lancement, ou accès accordés et réglages modifiés. */
-    class Case(val configured: Boolean) {
-        val name: String get() = if (configured) "reglages-personnalises" else "reglages-premier-lancement"
+    /** Un cas : premier lancement, ou accès accordés et réglages modifiés ; en français ou en anglais. */
+    class Case(val configured: Boolean, val english: Boolean = false) {
+        val name: String
+            get() = (if (configured) "reglages-personnalises" else "reglages-premier-lancement") + if (english) "-anglais" else ""
 
         override fun toString() = name
     }
@@ -84,6 +87,6 @@ class SettingsScreenshotTest(private val case: Case) {
 
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "{0}")
-        fun cases(): List<Case> = listOf(Case(configured = false), Case(configured = true))
+        fun cases(): List<Case> = listOf(Case(configured = false), Case(configured = true), Case(configured = false, english = true))
     }
 }
