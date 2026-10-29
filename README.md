@@ -152,17 +152,17 @@ L'écran de veille démarre quand l'écran s'éteint tout seul pendant la charge
 
 - **Tests unitaires** (JVM, rapides) : plage de nuit, raccourcis jour/nuit, grille du calendrier, côté de l'horloge, orbite anti-marquage, rythme de rafraîchissement, délai d'extinction automatique, écriture 12 h ou 24 h, détection du « j'aime », affichage et place de la musique (sous l'heure, ou carte si le calendrier est masqué), événements du jour (jours UTC des événements « toute la journée », minuit, tri, agendas cochés), semaine selon la région (premier jour, numéro), date dans la langue de l'app et l'ordre de la région, batterie et prochain réveil (seuil de batterie faible, charge masquée la nuit, réveil dans les 24 heures, dans le fuseau de l'horloge et en 12 h ou 24 h, niveau calculé sur l'échelle du système), textes visibles (tous dans `strings.xml`, tous traduits en anglais, aucun modèle de téléphone), version d'Android visée et maintien de *Toujours paysage* sur grand écran.
   ```bash
-  mise exec -- ./gradlew testDebugUnitTest
+  mise run test
   ```
 - **Tests d'interface** (Compose, sur un émulateur ou un téléphone branché, à heure fixe) : calendrier affiché par défaut, calendrier et musique visibles ensemble, barre musique sous l'heure sans chevauchement en paysage et en portrait (3 styles), carte musique si le calendrier est masqué, cadran pas plus haut que le calendrier, toucher pour la nuit, appui long pour le calendrier, balayage entre les styles, semaine et événements du jour à la place du mois (et le mois la nuit ou quand tout est passé), choix des agendas dans les réglages, heures en 12 h ou 24 h selon le téléphone, batterie et prochain réveil à côté de la date (réveil seul la nuit, batterie débranchée seulement si faible, sous le cadran en analogique, avec ou sans calendrier).
   ```bash
-  mise exec -- ./gradlew connectedDebugAndroidTest
+  mise exec -- ./gradlew connectedDebugAndroidTest   # ou mise run test:connected, qui joue aussi les parcours sur l'APK release
   ```
   Avec plusieurs appareils connectés, choisir l'émulateur avec `ANDROID_SERIAL=emulator-5554` : les tests effacent les réglages de l'app.
 
 - **Captures de référence** (Roborazzi, sur la JVM) : les 3 styles en jour et nuit, paysage et portrait, avec musique, sans calendrier, avec les événements du jour, en 12 h, en *Toujours paysage*, en anglais, avec la batterie et le prochain réveil, et l'écran des réglages en français et en anglais ; chaque image est comparée à celle de `app/src/test/screenshots/`.
   ```bash
-  mise exec -- ./gradlew verifyRoborazziDebug
+  mise run screenshots
   ```
 
 Ces suites tournent dans GitHub Actions sur chaque pull request, avec ktlint, detekt, Android Lint et des parcours de bout en bout sur émulateur (détail dans [CONTRIBUTING.md](CONTRIBUTING.md)).
@@ -172,11 +172,11 @@ Ces suites tournent dans GitHub Actions sur chaque pull request, avec ktlint, de
 `main` est protégée : on n'y pousse jamais directement, chaque changement passe par une pull request qui ne peut être mergée que si la CI est verte. Avant de pousser :
 
 ```bash
-scripts/check.sh        # ktlint, detekt, Android Lint, tests unitaires, captures de référence, APK debug et release
-scripts/check.sh --all  # idem + tests d'interface, parcours e2e, et parcours courts sur l'APK release
+mise run check      # ktlint, detekt, Android Lint, tests unitaires, captures de référence, APK debug et release
+mise run check:all  # idem + tests d'interface, parcours e2e, et parcours courts sur l'APK release
 ```
 
-Le détail (jobs de la CI, conventions de code) est dans [CONTRIBUTING.md](CONTRIBUTING.md).
+Ces tâches sont définies dans `mise.toml` (`mise tasks` les liste) et la CI lance les mêmes. Le détail (jobs de la CI, conventions de code) est dans [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Structure
 

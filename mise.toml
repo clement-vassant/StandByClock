@@ -1,3 +1,54 @@
 # Gradle 8.14 ne supporte pas les JDK trop récents : le projet compile avec Java 17 (comme la CI).
 [tools]
 java = "temurin-17"
+
+# Les vérifications du projet, lancées par `mise run <tâche>` en local comme dans chaque job de la CI :
+# une seule liste, qui ne peut pas diverger entre les deux. `mise tasks` les affiche.
+[vars]
+lint = "ktlintCheck detekt lintDebug"
+unit_tests = "testDebugUnitTest"
+apks = "assembleDebug assembleRelease"
+# Les images de référence sont rendues sous Linux, comme sur la CI : ailleurs (macOS), le rendu des polices diffère
+# un peu, donc on produit seulement le rapport de comparaison (app/build/outputs/roborazzi) sans échouer.
+screenshots = '$([ "$(uname -s)" = Linux ] && echo verifyRoborazziDebug || echo compareRoborazziDebug)'
+
+[task_config]
+shell = "bash -c"
+
+[tasks.lint]
+description = "ktlint, detekt et Android Lint"
+run = "./gradlew {{ vars.lint }}"
+
+[tasks.format]
+description = "Corrige la mise en forme (ktlint)"
+run = "./gradlew ktlintFormat"
+
+[tasks.test]
+description = "Tests unitaires JVM"
+run = "./gradlew {{ vars.unit_tests }}"
+
+[tasks.screenshots]
+description = "Compare les rendus aux captures de référence (Roborazzi)"
+run = "./gradlew {{ vars.screenshots }}"
+
+[tasks."screenshots:record"]
+description = "Régénère les captures de référence (sous Linux)"
+run = "./gradlew recordRoborazziDebug"
+
+[tasks.build]
+description = "APK debug et release (R8)"
+run = "./gradlew {{ vars.apks }}"
+
+# Un seul appel Gradle, plus rapide que quatre : mêmes tâches que lint, test, screenshots et build.
+[tasks.check]
+description = "Avant de pousser : lint, tests unitaires, captures de référence, APK debug et release"
+run = "./gradlew {{ vars.lint }} {{ vars.unit_tests }} {{ vars.screenshots }} {{ vars.apks }}"
+
+[tasks."test:connected"]
+description = "Tests d'interface et parcours e2e, aussi sur l'APK release (émulateur ou téléphone branché)"
+run = "scripts/connected-tests.sh"
+
+[tasks."check:all"]
+description = "check, puis les tests d'interface et parcours e2e"
+depends = ["check"]
+run = "scripts/connected-tests.sh"
