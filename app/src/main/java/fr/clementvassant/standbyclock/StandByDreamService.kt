@@ -66,7 +66,7 @@ class StandByDreamService :
                 StandByScreen(
                     prefs = prefs,
                     forcedTheme = null,
-                    onNightModeChange = { night -> window.applyClockBrightness(night, ClockSurface.SCREEN_SAVER) },
+                    onNightModeChange = ::applyBrightness,
                     onOpenSettings = null,
                     modifier = orientation
                 )
@@ -74,6 +74,15 @@ class StandByDreamService :
         }
         setContentView(view)
         window.preferLowestRefreshRate()
+    }
+
+    /**
+     * Luminosité minimale la nuit. Contrairement à une Activity, un DreamService ne transmet pas au système
+     * les changements d'attributs de sa fenêtre : sans `updateViewLayout`, la valeur reste ignorée.
+     */
+    private fun applyBrightness(night: Boolean) {
+        window.applyClockBrightness(night, ClockSurface.SCREEN_SAVER)
+        window.windowManager.updateViewLayout(window.decorView, window.attributes)
     }
 
     override fun onDreamingStarted() {
