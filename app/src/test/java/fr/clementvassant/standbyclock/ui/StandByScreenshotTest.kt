@@ -1,6 +1,9 @@
 package fr.clementvassant.standbyclock.ui
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
@@ -14,6 +17,7 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import fr.clementvassant.standbyclock.CalendarEvent
 import fr.clementvassant.standbyclock.ClockPrefs
 import fr.clementvassant.standbyclock.ClockStyle
+import fr.clementvassant.standbyclock.NowPlaying
 import fr.clementvassant.standbyclock.PREFS_FILE
 import fr.clementvassant.standbyclock.ThemeMode
 import java.time.Clock
@@ -30,7 +34,8 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * Captures de référence de l'écran de l'horloge, comparées pixel à pixel à celles du dépôt (src/test/screenshots).
- * Toujours la même heure, les mêmes réglages et les mêmes événements : une différence vient forcément du code.
+ * Toujours la même heure, les mêmes réglages, les mêmes événements et la même musique : une différence vient forcément
+ * du code.
  *
  * `./gradlew verifyRoborazziDebug` compare, `./gradlew recordRoborazziDebug` remplace les images de référence.
  */
@@ -54,12 +59,15 @@ class StandByScreenshotTest(private val case: Case) {
         context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE).edit().clear().commit()
         prefs = ClockPrefs(context).apply {
             style = case.style
+            showCalendar = case.showCalendar
             shownCalendars = setOf(WORK)
         }
     }
 
     @Test
     fun matchesReferenceImage() {
+        // Créée ici : un Bitmap a besoin de l'environnement Robolectric.
+        val media = if (case.media) nowPlaying() else null
         rule.setContent {
             Box(Modifier.size(width = case.width, height = case.height)) {
                 StandByScreen(
@@ -67,8 +75,10 @@ class StandByScreenshotTest(private val case: Case) {
                     forcedTheme = if (case.night) ThemeMode.NIGHT else ThemeMode.DAY,
                     onNightModeChange = {},
                     onOpenSettings = null,
+                    // Comme l'écran de veille avec « Toujours paysage » (StandByDreamService).
+                    modifier = if (case.forceLandscape) Modifier.forceLandscape() else Modifier,
                     clock = CLOCK,
-                    nowPlayingSource = { null },
+                    nowPlayingSource = { enabled -> if (enabled) media else null },
                     eventsSource = { enabled, _: LocalDate -> if (enabled) case.events else emptyList() }
                 )
             }
@@ -76,12 +86,35 @@ class StandByScreenshotTest(private val case: Case) {
         rule.onNodeWithTag(TAG_SCREEN).captureRoboImage("src/test/screenshots/${case.name}.png", roborazziOptions = options)
     }
 
-    /** Un cas : style, jour ou nuit, taille d'écran (dp) et événements du jour. */
+    /** Musique en lecture, aimée, avec une pochette à deux couleurs : la carte montre tous ses éléments. */
+    private fun nowPlaying(): NowPlaying {
+        val art = Bitmap.createBitmap(ART_SIZE, ART_SIZE, Bitmap.Config.ARGB_8888)
+        Canvas(art).apply {
+            drawColor(ART_BACKGROUND)
+            drawCircle(ART_SIZE / 2f, ART_SIZE / 2f, ART_SIZE / 3f, Paint().apply { color = ART_DISC })
+        }
+        return NowPlaying(
+            title = "Clair de lune",
+            artist = "Claude Debussy",
+            art = art,
+            isPlaying = true,
+            pausedAt = 0L,
+            liked = true
+        )
+    }
+
+    /**
+     * Un cas : style, jour ou nuit, taille d'écran (dp), événements du jour, calendrier affiché ou masqué,
+     * musique en cours, et horloge tournée par « Toujours paysage ».
+     */
     class Case(
         val style: ClockStyle,
         val night: Boolean,
         val portrait: Boolean,
         val events: List<CalendarEvent> = emptyList(),
+        val showCalendar: Boolean = true,
+        val media: Boolean = false,
+        val forceLandscape: Boolean = false,
         private val suffix: String = ""
     ) {
         val width: Dp get() = if (portrait) SHORT_SIDE else LONG_SIDE
@@ -102,6 +135,10 @@ class StandByScreenshotTest(private val case: Case) {
         private val SHORT_SIDE = 400.dp
 
         private const val WORK = 3L
+
+        private const val ART_SIZE = 96
+        private const val ART_BACKGROUND = 0xFF1E5A8C.toInt()
+        private const val ART_DISC = 0xFFE8B04A.toInt()
         private val PARIS = ZoneId.of("Europe/Paris")
 
         // Mardi 20 octobre 2026, 14:15 : heure paire, l'horloge est à gauche (en haut en portrait).
@@ -118,6 +155,16 @@ class StandByScreenshotTest(private val case: Case) {
         @ParameterizedRobolectricTestRunner.Parameters(name = "{0}")
         fun cases(): List<Case> = ClockStyle.entries.flatMap { style ->
             listOf(false, true).flatMap { night -> listOf(false, true).map { portrait -> Case(style, night, portrait) } }
-        } + Case(ClockStyle.DIGITAL, night = false, portrait = false, events = TODAY_EVENTS, suffix = "-evenements")
+        } + listOf(
+            Case(ClockStyle.DIGITAL, night = false, portrait = false, events = TODAY_EVENTS, suffix = "-evenements"),
+            // Calendrier masqué : l'horloge seule, ou la grande carte musique à côté.
+            Case(ClockStyle.DIGITAL, night = false, portrait = false, showCalendar = false, suffix = "-sans-calendrier"),
+            Case(ClockStyle.DIGITAL, night = false, portrait = false, media = true, suffix = "-musique"),
+            Case(ClockStyle.DIGITAL, night = false, portrait = false, showCalendar = false, media = true, suffix = "-musique-carte"),
+            // La nuit, la pochette passe en gris et s'atténue encore (OLED).
+            Case(ClockStyle.DIGITAL, night = true, portrait = false, showCalendar = false, media = true, suffix = "-musique-carte"),
+            // Écran de veille en portrait avec « Toujours paysage » : tout l'écran est couché d'un quart de tour.
+            Case(ClockStyle.DIGITAL, night = false, portrait = true, forceLandscape = true, suffix = "-toujours-paysage")
+        )
     }
 }

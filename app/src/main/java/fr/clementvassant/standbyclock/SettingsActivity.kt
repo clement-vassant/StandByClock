@@ -82,22 +82,20 @@ class SettingsActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val prefs = ClockPrefs(this)
         setContent {
-            MaterialTheme(colorScheme = darkColorScheme(primary = DayColors.accent, background = Color.Black, surface = Color.Black)) {
-                Surface(Modifier.fillMaxSize()) {
-                    SettingsScreen(
-                        prefs = prefs,
-                        pickTime = ::pickTime,
-                        onLaunch = { startActivity(Intent(this, MainActivity::class.java)) },
-                        onOpenScreenSaver = ::openScreenSaverSettings,
-                        hasMediaAccess = { MediaListenerService.isGranted(this) },
-                        onOpenNotificationAccess = { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) },
-                        calendarSource = CalendarSource(
-                            hasAccess = { DeviceCalendar.hasAccess(this) },
-                            requestAccess = { requestCalendarAccess(prefs) },
-                            calendars = { DeviceCalendar.calendars(this) }
-                        )
+            SettingsTheme {
+                SettingsScreen(
+                    prefs = prefs,
+                    pickTime = ::pickTime,
+                    onLaunch = { startActivity(Intent(this, MainActivity::class.java)) },
+                    onOpenScreenSaver = ::openScreenSaverSettings,
+                    hasMediaAccess = { MediaListenerService.isGranted(this) },
+                    onOpenNotificationAccess = { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) },
+                    calendarSource = CalendarSource(
+                        hasAccess = { DeviceCalendar.hasAccess(this) },
+                        requestAccess = { requestCalendarAccess(prefs) },
+                        calendars = { DeviceCalendar.calendars(this) }
                     )
-                }
+                )
             }
         }
     }
@@ -114,6 +112,14 @@ class SettingsActivity : ComponentActivity() {
         } catch (_: ActivityNotFoundException) {
             startActivity(Intent(Settings.ACTION_DISPLAY_SETTINGS))
         }
+    }
+}
+
+/** Thème sombre des réglages, partagé avec leurs captures de référence (SettingsScreenshotTest). */
+@Composable
+internal fun SettingsTheme(content: @Composable () -> Unit) {
+    MaterialTheme(colorScheme = darkColorScheme(primary = DayColors.accent, background = Color.Black, surface = Color.Black)) {
+        Surface(Modifier.fillMaxSize(), content = content)
     }
 }
 
