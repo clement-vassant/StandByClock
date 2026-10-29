@@ -104,12 +104,20 @@ class CalendarEventsTest {
 
     @Test
     fun `event time reads all day, end time when ongoing, or start time`() {
-        assertEquals(AgendaTime.AllDay, agendaTime(allDay("Anniversaire de Léa", today), now))
-        assertEquals(AgendaTime.EndsAt("15:00"), agendaTime(timed("Revue de sprint", "14:00", "15:00"), now))
+        assertEquals(AgendaTime.AllDay, agendaTime(allDay("Anniversaire de Léa", today), now, HourFormat.H24))
+        assertEquals(AgendaTime.EndsAt("15:00"), agendaTime(timed("Revue de sprint", "14:00", "15:00"), now, HourFormat.H24))
         val nightShift = timed("Astreinte", "13:00", "23:00").copy(end = millis(today.plusDays(1), "08:00"))
-        assertEquals(AgendaTime.Ongoing, agendaTime(nightShift, now))
-        assertEquals(AgendaTime.StartsAt("17:30"), agendaTime(timed("Dentiste", "17:30", "18:00"), now))
-        assertEquals(AgendaTime.StartsAt("09:05"), agendaTime(timed("Café", "09:05", "09:30"), now.withHour(8)))
+        assertEquals(AgendaTime.Ongoing, agendaTime(nightShift, now, HourFormat.H24))
+        assertEquals(AgendaTime.StartsAt("17:30"), agendaTime(timed("Dentiste", "17:30", "18:00"), now, HourFormat.H24))
+        assertEquals(AgendaTime.StartsAt("09:05"), agendaTime(timed("Café", "09:05", "09:30"), now.withHour(8), HourFormat.H24))
+    }
+
+    @Test
+    fun `event time in 12 h says AM or PM`() {
+        assertEquals(AgendaTime.AllDay, agendaTime(allDay("Anniversaire de Léa", today), now, HourFormat.H12))
+        assertEquals(AgendaTime.EndsAt("03:00 PM"), agendaTime(timed("Revue de sprint", "14:00", "15:00"), now, HourFormat.H12))
+        assertEquals(AgendaTime.StartsAt("05:30 PM"), agendaTime(timed("Dentiste", "17:30", "18:00"), now, HourFormat.H12))
+        assertEquals(AgendaTime.StartsAt("09:05 AM"), agendaTime(timed("Café", "09:05", "09:30"), now.withHour(8), HourFormat.H12))
     }
 
     @Test
