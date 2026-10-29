@@ -165,8 +165,8 @@ Les deux suites tournent dans GitHub Actions sur chaque pull request, avec ktlin
 `main` est protégée : on n'y pousse jamais directement, chaque changement passe par une pull request qui ne peut être mergée que si la CI est verte. Avant de pousser :
 
 ```bash
-scripts/check.sh        # ktlint, detekt, Android Lint, tests unitaires, APK
-scripts/check.sh --all  # idem + tests d'interface
+scripts/check.sh        # ktlint, detekt, Android Lint, tests unitaires, APK debug et release
+scripts/check.sh --all  # idem + tests d'interface, et parcours courts sur l'APK release
 ```
 
 Le détail (jobs de la CI, conventions de code) est dans [CONTRIBUTING.md](CONTRIBUTING.md).

@@ -11,7 +11,7 @@
 ```bash
 mise install           # Java 17, une seule fois
 scripts/check.sh       # ktlint, detekt, Android Lint, tests unitaires, captures de référence, APK
-scripts/check.sh --all # idem + tests d'interface et parcours e2e (émulateur ou téléphone branché)
+scripts/check.sh --all # idem + tests d'interface, parcours e2e, et parcours courts sur l'APK release (émulateur ou téléphone branché)
 ```
 
 `mise exec -- ./gradlew ktlintFormat` corrige automatiquement la mise en forme.
@@ -23,8 +23,8 @@ scripts/check.sh --all # idem + tests d'interface et parcours e2e (émulateur ou
 | Lint | `ktlintCheck detekt lintDebug` | style Kotlin (ktlint + règles Compose), code smells (detekt + règles Compose), erreurs Android (Lint, avertissements bloquants) |
 | Tests unitaires | `testDebugUnitTest` | logique pure : plage de nuit, calendrier, anti-marquage, musique… |
 | Captures de référence | `verifyRoborazziDebug` | l'écran de l'horloge (3 styles, jour/nuit, paysage/portrait) rendu sur la JVM et comparé aux images de `app/src/test/screenshots/` ; en cas d'écart, l'artefact `screenshot-diffs` montre la différence |
-| Tests d'interface et parcours e2e | `connectedDebugAndroidTest` | tests Compose à heure fixe, puis parcours de bout en bout UI Automator (lanceur, réglages, autorisation de l'agenda, orientation Automatique et Toujours paysage, écran de veille) sur un émulateur API 34 ; captures dans l'artefact `e2e-captures` |
-| APK debug et release | `assembleDebug assembleRelease` | l'app compile dans les deux variantes ; l'APK debug est téléchargeable dans les artefacts du run |
+| Tests d'interface et parcours e2e | `scripts/connected-tests.sh` | tests Compose à heure fixe, puis parcours de bout en bout UI Automator (lanceur, réglages, autorisation de l'agenda, orientation Automatique et Toujours paysage, écran de veille) sur un émulateur API 34 ; puis le module `release-smoke` ouvre l'horloge, les réglages et l'écran de veille sur l'APK release passé par R8 (tests dans leur propre processus, qui pilotent l'app par l'écran seulement) ; captures dans l'artefact `e2e-captures` |
+| APK debug et release | `assembleDebug assembleRelease` | l'app compile dans les deux variantes ; la release passe par R8 (code et ressources inutilisés retirés, règles dans `app/proguard-rules.pro`) avec le profil de référence `app/src/main/baseline-prof.txt` ; l'APK debug est téléchargeable dans les artefacts du run |
 | `ci-ok` | | vert seulement si tous les autres le sont ; c'est lui que la protection de `main` exige |
 
 ### Captures de référence

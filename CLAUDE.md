@@ -7,7 +7,7 @@ Package `fr.clementvassant.standbyclock`, minSdk 29, Java 17 via `mise.toml`. R�
 
 - **Jamais de push sur `main`.** Une branche et une pull request par sujet ; la PR n'est mergeable que si le job `ci-ok` est vert.
 - **Pas de changement sans test.** Logique : test unitaire JVM dans `app/src/test`. Ce qui se voit : test Compose dans `app/src/androidTest` et capture de référence Roborazzi (`StandByScreenshotTest`). Ce qui traverse le système (permission, écran de veille, rotation) : parcours e2e UI Automator dans `app/src/androidTest/.../e2e`.
-- **Avant de pousser :** `scripts/check.sh` (ktlint, detekt, Android Lint, tests unitaires, captures de référence, APK). `mise exec -- ./gradlew ktlintFormat` corrige la mise en forme.
+- **Avant de pousser :** `scripts/check.sh` (ktlint, detekt, Android Lint, tests unitaires, captures de référence, APK debug et release). `mise exec -- ./gradlew ktlintFormat` corrige la mise en forme.
 - **Ne jamais affaiblir un garde-fou pour passer la CI** : pas de test désactivé, pas de `@Suppress`, `tools:ignore` ni règle désactivée sans commentaire qui explique pourquoi c'est voulu.
 - Messages de commit et titres de PR en anglais, au format [Conventional Commits](https://www.conventionalcommits.org/fr/) (`feat:`, `fix:`, `docs:`, `ci:`…) : le bouton de release en déduit la prochaine version. Description de PR au format « Avant / Après / Comment » du modèle `.github/pull_request_template.md`.
 - La version n'est écrite nulle part dans le dépôt : elle vient du dernier tag `vX.Y.Z` (voir CONTRIBUTING.md).

@@ -49,7 +49,12 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // R8 retire le code et les ressources inutilisés et optimise le reste : APK bien plus léger.
+            // Les composants déclarés dans le manifeste (activités, écran de veille, écouteur de notifications)
+            // sont gardés d'office. Le module release-smoke vérifie sur cet APK que l'app démarre toujours.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName(if (releaseKeystorePath != null) "release" else "debug")
         }
     }
@@ -61,6 +66,10 @@ android {
         compose = true
         // Expose la version à l'app et aux tests (AppVersionTest).
         buildConfig = true
+    }
+    sourceSets {
+        // Pilote de l'écran de veille, partagé avec le module release-smoke.
+        getByName("androidTest").kotlin.directories.add(rootProject.file("e2e-shared/java").path)
     }
     testOptions {
         // Robolectric (captures Roborazzi) a besoin des ressources de l'app dans les tests JVM.
@@ -116,6 +125,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.1")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.1")
     implementation("androidx.savedstate:savedstate-ktx:1.3.0")
+    // L'APK s'installe hors du Play Store : c'est profileinstaller qui précompile au premier lancement le code listé
+    // dans src/main/baseline-prof.txt et les profils fournis par Compose.
+    implementation("androidx.profileinstaller:profileinstaller:1.4.1")
 
     testImplementation("junit:junit:4.13.2")
     // Captures de référence sur la JVM (Robolectric) : StandByScreenshotTest.

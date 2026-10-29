@@ -35,7 +35,7 @@ class ScreenSaverJourneyTest {
     @Before
     fun prepare() {
         prefs = E2e.freshStart()
-        screenSaver = ScreenSaver(device)
+        screenSaver = ScreenSaver(device, E2e.PACKAGE, E2e.CAPTURES_DIR, E2e.SCREEN_TIMEOUT_MS, TAG_SCREEN)
     }
 
     @After
