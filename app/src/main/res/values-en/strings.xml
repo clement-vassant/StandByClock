@@ -1,0 +1,68 @@
+<!-- Traduction anglaise, choisie quand l'appareil (ou l'app, depuis Android 13) est en anglais. -->
+<resources>
+    <string name="day_clock">Day clock</string>
+    <string name="night_clock">Night clock</string>
+    <string name="settings">StandBy settings</string>
+    <string name="media_listener">StandBy Clock: now playing</string>
+    <string name="help_screen_saver">While charging: turn on the \"StandBy Clock\" screen saver with \"While charging\".</string>
+    <string name="help_routines">At a set time or in a mode: in your routines or automation tools (for example Modes and Routines on Samsung, or Tasker), add the \"Open an app\" action and choose \"StandBy Clock\": day and night follow the Auto mode hours. To force day or night once, long-press the icon.</string>
+
+    <string name="date_language">en</string>
+    <string-array name="week_initials">
+        <item>M</item>
+        <item>T</item>
+        <item>W</item>
+        <item>T</item>
+        <item>F</item>
+        <item>S</item>
+        <item>S</item>
+    </string-array>
+
+    <string name="agenda_all_day">All day</string>
+    <string name="agenda_ends_at">→ %1$s</string>
+    <string name="agenda_ongoing">Ongoing</string>
+    <string name="agenda_untitled">(No title)</string>
+    <string name="agenda_week_number">week %1$d</string>
+    <plurals name="agenda_more_events">
+        <item quantity="one">+%1$d more</item>
+        <item quantity="other">+%1$d more</item>
+    </plurals>
+
+    <string name="settings_style">Clock style</string>
+    <string name="style_digital">Digital</string>
+    <string name="style_analog">Analog</string>
+    <string name="style_minimal">Minimal</string>
+    <string name="settings_show_calendar">Show the calendar</string>
+    <string name="settings_show_calendar_help">It swaps sides with the clock every hour to protect the screen from burn-in.</string>
+    <string name="settings_show_media">Show what\'s playing</string>
+    <string name="settings_media_access_help">To show and control music (Spotify…), StandBy Clock needs notification access.</string>
+    <string name="settings_media_access_button">Allow notification access</string>
+    <string name="settings_show_events">Show today\'s events</string>
+    <string name="settings_show_events_help">By day, the ones not over yet, next to the clock. At night, only the month calendar.</string>
+    <string name="settings_calendar_access_help">To show events, StandBy Clock needs to read your calendar.</string>
+    <string name="settings_calendar_access_button">Allow calendar access</string>
+    <string name="settings_shown_calendars">Calendars shown</string>
+    <string name="settings_shown_calendars_help">Tick the calendars to show. A calendar added to the device later stays hidden until you tick it.</string>
+    <string name="settings_no_calendars">No calendars on this device.</string>
+    <string name="settings_day_night">Day or night</string>
+    <string name="theme_auto">Auto</string>
+    <string name="theme_day">Day</string>
+    <string name="theme_night">Night</string>
+    <string name="settings_night_from">Night from</string>
+    <string name="settings_night_to">to</string>
+    <string name="settings_orientation">Orientation</string>
+    <string name="orientation_auto">Automatic</string>
+    <string name="orientation_landscape">Always landscape</string>
+    <string name="settings_orientation_auto_help">Follows the phone\'s rotation: side by side in landscape, clock above calendar in portrait.</string>
+    <string name="settings_orientation_landscape_help">The app stays in landscape. If the screen saver shows in portrait, the clock is turned so you can read it with the phone on its side, top of the screen to the left.</string>
+    <string name="settings_auto_off">Turn off after</string>
+    <string name="auto_off_hours">%1$d h</string>
+    <string name="auto_off_never">Never</string>
+    <string name="settings_launch">Start the clock</string>
+    <string name="settings_auto_launch">Automatic start</string>
+    <string name="settings_open_screen_saver">Open screen saver settings</string>
+    <string name="status_battery_percent">%1$d%%</string>
+    <string name="status_charging">charging</string>
+    <string name="status_low_battery">low battery</string>
+    <string name="status_next_alarm">Next alarm at %1$s</string>
+</resources>

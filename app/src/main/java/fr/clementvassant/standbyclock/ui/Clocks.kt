@@ -123,7 +123,7 @@ fun AnalogClockWithDate(
             // dont la colonne fait 1/1.4 de celle de l'horloge) : jours de la semaine + semaines du mois.
             BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 val cell = min(maxWidth / CLOCK_PANE_WEIGHT / DAYS_PER_WEEK, maxHeight * calendarHeight / CALENDAR_ROWS)
-                val rows = 0.8f + monthGrid(now.toLocalDate()).weeks
+                val rows = 0.8f + monthGrid(now.toLocalDate(), weekFields().firstDayOfWeek).weeks
                 // Batterie et réveil se placent juste sous le cadran, qui leur laisse une ligne et sa marge.
                 val statusSpace = if (status.isEmpty) 0.dp else ANALOG_STATUS_TEXT.asDp() * ANALOG_STATUS_LINES
                 val paneSize = min(maxWidth, maxHeight - statusSpace) * 0.9f
@@ -211,14 +211,15 @@ fun MinimalClock(
     }
 }
 
-/** Calendrier du mois affiché à côté de l'horloge ; semaine du lundi au dimanche, aujourd'hui entouré. */
+/** Calendrier du mois affiché à côté de l'horloge ; semaine selon la région, aujourd'hui entouré. */
 @Composable
 fun MonthCalendar(now: ZonedDateTime, colors: ClockColors, modifier: Modifier = Modifier) {
     BoxWithConstraints(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         // CALENDAR_ROWS : en-tête, jours de la semaine, 6 semaines au plus
         val cell = min(maxWidth / DAYS_PER_WEEK, maxHeight / CALENDAR_ROWS)
         val text = (cell * 0.42f).asSp()
-        val (offset, days, weeks) = monthGrid(now.toLocalDate())
+        val firstDay = weekFields().firstDayOfWeek
+        val (offset, days, weeks) = monthGrid(now.toLocalDate(), firstDay)
         val today = now.dayOfMonth
 
         Column(Modifier.fillMaxWidth().testTag(TAG_CALENDAR)) {
@@ -232,7 +233,7 @@ fun MonthCalendar(now: ZonedDateTime, colors: ClockColors, modifier: Modifier = 
                 Text(now.year.toString(), color = colors.secondary, fontSize = text)
             }
             Row(Modifier.fillMaxWidth()) {
-                for (label in weekInitials()) {
+                for (label in weekInitials(firstDay)) {
                     Box(Modifier.weight(1f).height(cell * 0.8f), contentAlignment = Alignment.Center) {
                         Text(label, color = colors.secondary, fontSize = (cell * 0.34f).asSp(), fontWeight = FontWeight.SemiBold)
                     }
@@ -252,7 +253,7 @@ fun MonthCalendar(now: ZonedDateTime, colors: ClockColors, modifier: Modifier = 
                                     day.toString(),
                                     color = when {
                                         day == today -> colors.accent
-                                        col >= 5 -> colors.secondary
+                                        firstDay.plus(col.toLong()).isWeekend() -> colors.secondary
                                         else -> colors.primary
                                     },
                                     fontSize = text,
@@ -267,12 +268,15 @@ fun MonthCalendar(now: ZonedDateTime, colors: ClockColors, modifier: Modifier = 
     }
 }
 
-/** Grille d'un mois, semaine du lundi au dimanche : cases vides avant le 1er, nombre de jours et de semaines. */
+/**
+ * Grille d'un mois, semaine commençant par [firstDay] (lundi par défaut) : cases vides avant le 1er, nombre de
+ * jours et de semaines.
+ */
 data class MonthGrid(val offset: Int, val days: Int, val weeks: Int)
 
-fun monthGrid(date: LocalDate): MonthGrid {
+fun monthGrid(date: LocalDate, firstDay: DayOfWeek = DayOfWeek.MONDAY): MonthGrid {
     val first = date.withDayOfMonth(1)
-    val offset = first.dayOfWeek.value - DayOfWeek.MONDAY.value
+    val offset = (first.dayOfWeek.value - firstDay.value).mod(DAYS_PER_WEEK)
     val days = first.lengthOfMonth()
     return MonthGrid(offset, days, (offset + days + DAYS_PER_WEEK - 1) / DAYS_PER_WEEK)
 }

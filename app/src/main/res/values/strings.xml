@@ -1,7 +1,7 @@
 <!-- Textes en français : la vérification orthographique de Lint doit le savoir. -->
 <resources xmlns:tools="http://schemas.android.com/tools" tools:locale="fr">
-    <string name="app_name">StandBy Clock</string>
-    <string name="dream_label">StandBy Clock</string>
+    <string name="app_name" translatable="false">StandBy Clock</string>
+    <string name="dream_label" translatable="false">StandBy Clock</string>
     <string name="day_clock">Horloge jour</string>
     <string name="night_clock">Horloge nuit</string>
     <string name="settings">Réglages StandBy</string>
@@ -9,9 +9,8 @@
     <string name="help_screen_saver">Pendant la charge : activez l\'écran de veille « StandBy Clock » avec « Pendant la charge ».</string>
     <string name="help_routines">À heure fixe ou selon un mode : dans vos routines ou outils d\'automatisation (par exemple Modes et routines sur Samsung, ou Tasker), ajoutez l\'action « Ouvrir une app » et choisissez « StandBy Clock » : le jour et la nuit suivent la plage horaire du mode Auto. Pour forcer le jour ou la nuit une fois, faites un appui long sur l\'icône.</string>
 
-    <!-- Dates : langue des noms de jours et de mois, celle de ces textes (voir ui/DateTexts.kt) -->
+    <!-- Dates : langue des noms de jours et de mois, celle de ces textes ; ordre selon la région (voir ui/DateTexts.kt) -->
     <string name="date_language">fr</string>
-    <string name="date_full_pattern">EEEE d MMMM</string>
     <string-array name="week_initials">
         <item>L</item>
         <item>M</item>
@@ -68,6 +67,8 @@
     <string name="settings_launch">Lancer l\'horloge</string>
     <string name="settings_auto_launch">Lancement automatique</string>
     <string name="settings_open_screen_saver">Ouvrir les réglages d\'écran de veille</string>
+    <!-- Espace insécable : « 76 % » ne se coupe jamais. -->
+    <string name="status_battery_percent">%1$d %%</string>
     <string name="status_charging">en charge</string>
     <string name="status_low_battery">batterie faible</string>
     <string name="status_next_alarm">Prochain réveil à %1$s</string>

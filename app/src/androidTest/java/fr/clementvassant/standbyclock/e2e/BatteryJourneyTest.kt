@@ -7,6 +7,7 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import androidx.test.uiautomator.uiAutomator
 import fr.clementvassant.standbyclock.MainActivity
+import fr.clementvassant.standbyclock.R
 import fr.clementvassant.standbyclock.ui.TAG_BATTERY
 import org.junit.After
 import org.junit.Assert.assertTrue
@@ -38,7 +39,7 @@ class BatteryJourneyTest {
         E2e.open(MainActivity::class.java)
         clockScreen()
         byTag(TAG_BATTERY)
-        byText("76 %")
+        byText(percent(76))
         capture("batterie-en-charge")
 
         // Débranché et bien chargé : rien à signaler.
@@ -47,13 +48,16 @@ class BatteryJourneyTest {
 
         // Débranché et faible : la batterie revient.
         battery("set level 12")
-        byText("12 %")
+        byText(percent(12))
         // Sous le seuil de batterie faible, l'interface système de l'émulateur plante et la capture de l'app sort
         // noire tant qu'elle n'est pas rouverte : on la rouvre pour une capture lisible.
         E2e.open(MainActivity::class.java)
-        byText("12 %")
+        byText(percent(12))
         capture("batterie-faible")
     }
+
+    /** Niveau tel que l'app l'écrit dans la langue de l'émulateur (« 76 % » ou « 76% »). */
+    private fun percent(level: Int) = E2e.context.getString(R.string.status_battery_percent, level)
 
     private fun battery(vararg commands: String) = commands.forEach { device.executeShellCommand("dumpsys battery $it") }
 }

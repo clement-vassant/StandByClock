@@ -19,7 +19,7 @@ class DeviceStatusTest {
     @Test
     fun `en charge le jour, la batterie s'affiche avec l'éclair`() {
         val line = status(BatteryStatus(percent = 76, charging = true))
-        assertEquals("76 %", line.battery?.text)
+        assertEquals(76, line.battery?.percent)
         assertEquals(true, line.battery?.charging)
         assertEquals(false, line.battery?.low)
     }
@@ -28,7 +28,7 @@ class DeviceStatusTest {
     fun `hors charge, la batterie ne s'affiche que sous le seuil bas`() {
         assertNull(status(BatteryStatus(percent = LOW_BATTERY_PERCENT, charging = false)).battery)
         val low = status(BatteryStatus(percent = LOW_BATTERY_PERCENT - 1, charging = false)).battery
-        assertEquals("19 %", low?.text)
+        assertEquals(19, low?.percent)
         assertEquals(true, low?.low)
         assertEquals(false, low?.charging)
     }
@@ -36,7 +36,7 @@ class DeviceStatusTest {
     @Test
     fun `la nuit, la charge se tait mais la batterie faible reste`() {
         assertNull(status(BatteryStatus(percent = 76, charging = true), night = true).battery)
-        assertEquals("14 %", status(BatteryStatus(percent = 14, charging = false), night = true).battery?.text)
+        assertEquals(14, status(BatteryStatus(percent = 14, charging = false), night = true).battery?.percent)
     }
 
     @Test

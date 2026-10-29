@@ -12,6 +12,7 @@ import fr.clementvassant.standbyclock.ClockPrefs
 import fr.clementvassant.standbyclock.ClockStyle
 import fr.clementvassant.standbyclock.DeviceStatus
 import fr.clementvassant.standbyclock.PREFS_FILE
+import fr.clementvassant.standbyclock.R
 import fr.clementvassant.standbyclock.ThemeMode
 import java.time.Clock
 import java.time.ZoneId
@@ -46,6 +47,9 @@ class DeviceStatusScreenTest {
         prefs = ClockPrefs(context)
     }
 
+    /** Niveau tel que l'app l'écrit dans la langue de l'appareil (« 76 % » ou « 76% »). */
+    private fun percent(level: Int) = context.getString(R.string.status_battery_percent, level)
+
     private fun show(status: DeviceStatus, theme: ThemeMode = ThemeMode.DAY, style: ClockStyle = ClockStyle.DIGITAL) {
         prefs.style = style
         rule.setContent {
@@ -64,7 +68,7 @@ class DeviceStatusScreenTest {
     @Test
     fun chargingShowsBatteryAndAlarmNextToTheDate() {
         show(DeviceStatus(BatteryStatus(percent = 76, charging = true), tomorrowSeven))
-        rule.onNodeWithTag(TAG_BATTERY).assertIsDisplayed().assertTextEquals("76 %")
+        rule.onNodeWithTag(TAG_BATTERY).assertIsDisplayed().assertTextEquals(percent(76))
         rule.onNodeWithTag(TAG_ALARM).assertIsDisplayed().assertTextEquals("07:00")
     }
 
@@ -85,7 +89,7 @@ class DeviceStatusScreenTest {
     @Test
     fun unpluggedBatteryShowsOnlyWhenLow() {
         show(DeviceStatus(BatteryStatus(percent = 12, charging = false)))
-        rule.onNodeWithTag(TAG_BATTERY).assertIsDisplayed().assertTextEquals("12 %")
+        rule.onNodeWithTag(TAG_BATTERY).assertIsDisplayed().assertTextEquals(percent(12))
         rule.onNodeWithTag(TAG_ALARM).assertDoesNotExist()
     }
 

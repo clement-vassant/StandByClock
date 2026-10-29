@@ -72,7 +72,7 @@ private fun BatteryItem(battery: BatteryLabel, colors: ClockColors, fontSize: Te
         horizontalArrangement = Arrangement.spacedBy(iconSize * ICON_GAP)
     ) {
         BatteryIcon(color, battery.charging, battery.low, Modifier.size(iconSize))
-        Text(battery.text, color = color, fontSize = fontSize)
+        Text(stringResource(R.string.status_battery_percent, battery.percent), color = color, fontSize = fontSize)
     }
 }
 

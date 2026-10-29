@@ -31,8 +31,8 @@ data class BatteryStatus(val percent: Int, val charging: Boolean)
 /** Ce que le système dit de la batterie et du prochain réveil (heure murale en ms), lu sans autorisation. */
 data class DeviceStatus(val battery: BatteryStatus? = null, val nextAlarmMillis: Long? = null)
 
-/** La batterie telle qu'affichée : « 76 % », avec l'éclair en charge, en accent si faible. */
-data class BatteryLabel(val text: String, val charging: Boolean, val low: Boolean)
+/** La batterie telle qu'affichée : son niveau (« 76 % », écrit selon la langue), l'éclair en charge, l'accent si faible. */
+data class BatteryLabel(val percent: Int, val charging: Boolean, val low: Boolean)
 
 /** Batterie et réveil à afficher à côté de la date ; null pour ce qui reste caché. */
 data class StatusLine(val battery: BatteryLabel? = null, val alarm: String? = null) {
@@ -53,7 +53,7 @@ fun statusLine(
     val low = battery != null && !battery.charging && battery.percent < LOW_BATTERY_PERCENT
     val shownBattery = battery?.takeIf { low || (it.charging && !night) }
     return StatusLine(
-        battery = shownBattery?.let { BatteryLabel("${it.percent} %", charging = it.charging, low = low) },
+        battery = shownBattery?.let { BatteryLabel(it.percent, charging = it.charging, low = low) },
         alarm = nextAlarmMillis?.let { nextAlarmLabel(it, now, hourFormat) }
     )
 }

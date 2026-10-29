@@ -62,6 +62,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    androidResources {
+        // Déclare le français et l'anglais à Android 13+, qui propose alors de choisir la langue de l'app
+        // dans ses réglages, indépendamment de celle du téléphone (langue de values/ : res/resources.properties).
+        generateLocaleConfig = true
+    }
     buildFeatures {
         compose = true
         // Expose la version à l'app et aux tests (AppVersionTest).

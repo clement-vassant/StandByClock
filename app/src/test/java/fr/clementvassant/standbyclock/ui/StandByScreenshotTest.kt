@@ -32,6 +32,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -59,6 +60,8 @@ class StandByScreenshotTest(private val case: Case) {
 
     @Before
     fun prefs() {
+        // Téléphone américain : textes en anglais, semaine du dimanche au samedi.
+        if (case.english) RuntimeEnvironment.setQualifiers("+en-rUS")
         context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE).edit().clear().commit()
         // Écriture des heures du téléphone, explicite : le défaut de Robolectric dépend de la langue.
         Settings.System.putString(context.contentResolver, Settings.System.TIME_12_24, if (case.hour12) "12" else "24")
@@ -111,7 +114,8 @@ class StandByScreenshotTest(private val case: Case) {
 
     /**
      * Un cas : style, jour ou nuit, taille d'écran (dp), événements du jour, calendrier affiché ou masqué,
-     * musique en cours, horloge tournée par « Toujours paysage », téléphone réglé en 12 h, batterie et réveil.
+     * musique en cours, horloge tournée par « Toujours paysage », téléphone réglé en 12 h, langue (anglais des États-Unis),
+     * batterie et réveil.
      */
     class Case(
         val style: ClockStyle,
@@ -123,6 +127,7 @@ class StandByScreenshotTest(private val case: Case) {
         val media: Boolean = false,
         val forceLandscape: Boolean = false,
         val hour12: Boolean = false,
+        val english: Boolean = false,
         private val suffix: String = ""
     ) {
         val width: Dp get() = if (portrait) SHORT_SIDE else LONG_SIDE
@@ -132,7 +137,7 @@ class StandByScreenshotTest(private val case: Case) {
                 style.name.lowercase(),
                 if (night) "nuit" else "jour",
                 if (portrait) "portrait" else "paysage"
-            ).joinToString("-") + suffix
+            ).joinToString("-") + suffix + if (english) "-anglais" else ""
 
         override fun toString() = name
     }
@@ -182,7 +187,11 @@ class StandByScreenshotTest(private val case: Case) {
             // Téléphone en 12 h : « 02:15 » sans AM/PM sur l'horloge, AM/PM dans l'agenda.
             Case(ClockStyle.DIGITAL, night = false, portrait = false, events = TODAY_EVENTS, hour12 = true, suffix = "-evenements-12h"),
             Case(ClockStyle.MINIMAL, night = false, portrait = false, hour12 = true, suffix = "-12h"),
-            Case(ClockStyle.DIGITAL, night = true, portrait = false, hour12 = true, suffix = "-12h")
+            Case(ClockStyle.DIGITAL, night = true, portrait = false, hour12 = true, suffix = "-12h"),
+            // En anglais aux États-Unis : date, mois et semaine du dimanche au samedi, événements, grande date.
+            Case(ClockStyle.DIGITAL, night = false, portrait = false, english = true),
+            Case(ClockStyle.DIGITAL, night = false, portrait = false, events = TODAY_EVENTS, english = true, suffix = "-evenements"),
+            Case(ClockStyle.ANALOG, night = false, portrait = false, showCalendar = false, english = true, suffix = "-sans-calendrier")
         ) +
             ClockStyle.entries.flatMap { style ->
                 listOf(false, true).map { night ->
