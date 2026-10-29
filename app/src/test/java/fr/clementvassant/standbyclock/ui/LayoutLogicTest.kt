@@ -1,6 +1,9 @@
 package fr.clementvassant.standbyclock.ui
 
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.temporal.WeekFields
+import java.util.Locale
 import kotlin.math.hypot
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -18,6 +21,14 @@ class LayoutLogicTest {
         assertEquals(MonthGrid(offset = 0, days = 30, weeks = 5), monthGrid(LocalDate.of(2026, 6, 15)))
         // Mars 2026 : le 1er est un dimanche, 31 jours, 6 semaines.
         assertEquals(MonthGrid(offset = 6, days = 31, weeks = 6), monthGrid(LocalDate.of(2026, 3, 1)))
+    }
+
+    @Test
+    fun `month grid can start on sunday`() {
+        // Octobre 2026 aux États-Unis : le jeudi 1er est en 5e colonne, toujours 5 semaines.
+        assertEquals(MonthGrid(offset = 4, days = 31, weeks = 5), monthGrid(LocalDate.of(2026, 10, 20), DayOfWeek.SUNDAY))
+        // Mars 2026 : le dimanche 1er ouvre la grille, qui tient alors en 5 semaines au lieu de 6.
+        assertEquals(MonthGrid(offset = 0, days = 31, weeks = 5), monthGrid(LocalDate.of(2026, 3, 1), DayOfWeek.SUNDAY))
     }
 
     @Test
@@ -81,7 +92,7 @@ class LayoutLogicTest {
         assertEquals(LocalDate.of(2026, 10, 19), week.first())
         assertEquals(LocalDate.of(2026, 10, 25), week.last())
         assertEquals(7, week.size)
-        assertEquals(43, isoWeekNumber(LocalDate.of(2026, 10, 20)))
+        assertEquals(43, weekNumber(LocalDate.of(2026, 10, 20)))
         // Dimanche : il clôt sa semaine, il n'en ouvre pas une.
         assertEquals(LocalDate.of(2026, 10, 19), weekOf(LocalDate.of(2026, 10, 25)).first())
     }
@@ -92,6 +103,22 @@ class LayoutLogicTest {
         val week = weekOf(LocalDate.of(2026, 12, 31))
         assertEquals(LocalDate.of(2026, 12, 28), week.first())
         assertEquals(LocalDate.of(2027, 1, 3), week.last())
-        assertEquals(53, isoWeekNumber(LocalDate.of(2026, 12, 31)))
+        assertEquals(53, weekNumber(LocalDate.of(2026, 12, 31)))
+    }
+
+    @Test
+    fun `week can run from sunday to saturday`() {
+        // Mardi 20 octobre 2026 aux États-Unis : semaine du dimanche 18 au samedi 24, semaine 43 là-bas aussi.
+        val week = weekOf(LocalDate.of(2026, 10, 20), DayOfWeek.SUNDAY)
+        assertEquals(LocalDate.of(2026, 10, 18), week.first())
+        assertEquals(LocalDate.of(2026, 10, 24), week.last())
+        assertEquals(43, weekNumber(LocalDate.of(2026, 10, 20), WeekFields.of(Locale.US)))
+        // Dimanche : il ouvre sa semaine.
+        assertEquals(LocalDate.of(2026, 10, 25), weekOf(LocalDate.of(2026, 10, 25), DayOfWeek.SUNDAY).first())
+    }
+
+    @Test
+    fun `weekend is saturday and sunday`() {
+        assertEquals(listOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY), DayOfWeek.entries.filter { it.isWeekend() })
     }
 }

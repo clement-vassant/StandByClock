@@ -59,14 +59,17 @@ fun agendaTimeWidth(hourFormat: HourFormat): Float = when (hourFormat) {
     HourFormat.H12 -> AGENDA_TIME_WIDTH_12H
 }
 
-/** Les sept jours (lundi à dimanche) de la semaine de [date]. */
-fun weekOf(date: LocalDate): List<LocalDate> {
-    val monday = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-    return (0 until DAYS_PER_WEEK).map { monday.plusDays(it.toLong()) }
+/** Les sept jours de la semaine de [date], à partir de [firstDay] (lundi par défaut). */
+fun weekOf(date: LocalDate, firstDay: DayOfWeek = DayOfWeek.MONDAY): List<LocalDate> {
+    val start = date.with(TemporalAdjusters.previousOrSame(firstDay))
+    return (0 until DAYS_PER_WEEK).map { start.plusDays(it.toLong()) }
 }
 
-/** Numéro de semaine ISO (celui des agendas en France). */
-fun isoWeekNumber(date: LocalDate): Int = date.get(WeekFields.ISO.weekOfWeekBasedYear())
+/** Numéro de semaine selon les règles de la région (ISO par défaut, celui des agendas en France). */
+fun weekNumber(date: LocalDate, rules: WeekFields = WeekFields.ISO): Int = date.get(rules.weekOfWeekBasedYear())
+
+/** Samedi et dimanche : jours en gris dans les calendriers. */
+fun DayOfWeek.isWeekend(): Boolean = this == DayOfWeek.SATURDAY || this == DayOfWeek.SUNDAY
 
 /**
  * Les jours où il reste un événement : la semaine en cours sur une ligne, puis les événements du jour.
@@ -114,7 +117,7 @@ private fun WeekHeader(now: ZonedDateTime, colors: ClockColors, line: Dp) {
             fontWeight = FontWeight.SemiBold
         )
         Text(
-            stringResource(R.string.agenda_week_number, isoWeekNumber(now.toLocalDate())),
+            stringResource(R.string.agenda_week_number, weekNumber(now.toLocalDate(), weekFields())),
             color = colors.secondary,
             fontSize = (line * 0.38f).asSp()
         )
@@ -123,9 +126,10 @@ private fun WeekHeader(now: ZonedDateTime, colors: ClockColors, line: Dp) {
 
 @Composable
 private fun WeekRow(today: LocalDate, colors: ClockColors, line: Dp) {
-    val initials = weekInitials()
+    val firstDay = weekFields().firstDayOfWeek
+    val initials = weekInitials(firstDay)
     Row(Modifier.fillMaxWidth().height(line * 1.8f)) {
-        for ((index, day) in weekOf(today).withIndex()) {
+        for ((index, day) in weekOf(today, firstDay).withIndex()) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(Modifier.height(line * 0.7f), contentAlignment = Alignment.Center) {
                     Text(initials[index], color = colors.secondary, fontSize = (line * 0.34f).asSp(), fontWeight = FontWeight.SemiBold)
@@ -138,7 +142,7 @@ private fun WeekRow(today: LocalDate, colors: ClockColors, line: Dp) {
                         day.dayOfMonth.toString(),
                         color = when {
                             isToday -> colors.accent
-                            day.dayOfWeek.value > DayOfWeek.FRIDAY.value -> colors.secondary
+                            day.dayOfWeek.isWeekend() -> colors.secondary
                             else -> colors.primary
                         },
                         fontSize = (line * 0.42f).asSp(),

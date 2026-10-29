@@ -12,6 +12,7 @@ import fr.clementvassant.standbyclock.ClockPrefs
 import fr.clementvassant.standbyclock.ClockStyle
 import fr.clementvassant.standbyclock.EXTRA_THEME
 import fr.clementvassant.standbyclock.MainActivity
+import fr.clementvassant.standbyclock.R
 import fr.clementvassant.standbyclock.SettingsActivity
 import fr.clementvassant.standbyclock.ThemeMode
 import fr.clementvassant.standbyclock.ui.STATE_DAY
@@ -55,8 +56,9 @@ class LaunchJourneyTest {
         byTag(TAG_SETTINGS)
         byText("Minimal").click()
         // Le bouton est sous la ligne de flottaison sur un petit écran : on fait défiler jusqu'à lui.
-        val launch = byTag(TAG_SETTINGS).scrollUntil(Direction.DOWN, Until.findObject(By.text("Lancer l'horloge")))
-        assertNotNull("Bouton « Lancer l'horloge » introuvable", launch)
+        val label = E2e.context.getString(R.string.settings_launch)
+        val launch = byTag(TAG_SETTINGS).scrollUntil(Direction.DOWN, Until.findObject(By.text(label)))
+        assertNotNull("Bouton « $label » introuvable", launch)
         launch.click()
         byTag(clockTag(ClockStyle.MINIMAL))
         capture("reglages-minimal")
