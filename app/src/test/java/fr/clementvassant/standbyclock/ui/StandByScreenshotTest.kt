@@ -15,9 +15,11 @@ import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
+import fr.clementvassant.standbyclock.BatteryStatus
 import fr.clementvassant.standbyclock.CalendarEvent
 import fr.clementvassant.standbyclock.ClockPrefs
 import fr.clementvassant.standbyclock.ClockStyle
+import fr.clementvassant.standbyclock.DeviceStatus
 import fr.clementvassant.standbyclock.NowPlaying
 import fr.clementvassant.standbyclock.PREFS_FILE
 import fr.clementvassant.standbyclock.ThemeMode
@@ -85,7 +87,8 @@ class StandByScreenshotTest(private val case: Case) {
                     modifier = if (case.forceLandscape) Modifier.forceLandscape() else Modifier,
                     clock = CLOCK,
                     nowPlayingSource = { enabled -> if (enabled) media else null },
-                    eventsSource = { enabled, _: LocalDate -> if (enabled) case.events else emptyList() }
+                    eventsSource = { enabled, _: LocalDate -> if (enabled) case.events else emptyList() },
+                    deviceStatusSource = { case.status }
                 )
             }
         }
@@ -111,13 +114,15 @@ class StandByScreenshotTest(private val case: Case) {
 
     /**
      * Un cas : style, jour ou nuit, taille d'écran (dp), événements du jour, calendrier affiché ou masqué,
-     * musique en cours, horloge tournée par « Toujours paysage », téléphone réglé en 12 h, et langue (anglais des États-Unis).
+     * musique en cours, horloge tournée par « Toujours paysage », téléphone réglé en 12 h, langue (anglais des États-Unis),
+     * batterie et réveil.
      */
     class Case(
         val style: ClockStyle,
         val night: Boolean,
         val portrait: Boolean,
         val events: List<CalendarEvent> = emptyList(),
+        val status: DeviceStatus = DeviceStatus(),
         val showCalendar: Boolean = true,
         val media: Boolean = false,
         val forceLandscape: Boolean = false,
@@ -154,6 +159,12 @@ class StandByScreenshotTest(private val case: Case) {
 
         private fun at(hour: Int, minute: Int = 0) = ZonedDateTime.of(2026, 10, 20, hour, minute, 0, 0, PARIS).toInstant().toEpochMilli()
 
+        // En charge à 76 %, réveil le lendemain à 7 h : la nuit, seul le réveil reste.
+        private val CHARGING_WITH_ALARM = DeviceStatus(
+            BatteryStatus(percent = 76, charging = true),
+            nextAlarmMillis = ZonedDateTime.of(2026, 10, 21, 7, 0, 0, 0, PARIS).toInstant().toEpochMilli()
+        )
+
         private val TODAY_EVENTS = listOf(
             CalendarEvent("Revue de sprint", at(14), at(15), allDay = false, calendarId = WORK),
             CalendarEvent("Dentiste", at(17, 30), at(18), allDay = false, calendarId = WORK)
@@ -181,6 +192,11 @@ class StandByScreenshotTest(private val case: Case) {
             Case(ClockStyle.DIGITAL, night = false, portrait = false, english = true),
             Case(ClockStyle.DIGITAL, night = false, portrait = false, events = TODAY_EVENTS, english = true, suffix = "-evenements"),
             Case(ClockStyle.ANALOG, night = false, portrait = false, showCalendar = false, english = true, suffix = "-sans-calendrier")
-        )
+        ) +
+            ClockStyle.entries.flatMap { style ->
+                listOf(false, true).map { night ->
+                    Case(style, night, portrait = false, status = CHARGING_WITH_ALARM, suffix = "-batterie-reveil")
+                }
+            } + Case(ClockStyle.DIGITAL, night = false, portrait = true, status = CHARGING_WITH_ALARM, suffix = "-batterie-reveil")
     }
 }

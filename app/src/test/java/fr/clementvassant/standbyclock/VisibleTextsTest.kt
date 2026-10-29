@@ -36,7 +36,14 @@ class VisibleTextsTest {
     fun `visible texts come from the resources`() {
         // Un texte écrit en dur ne serait pas traduit : tout libellé passe par strings.xml. Seuls restent les
         // formats de nombres (« %02d ») et la ponctuation (« : »), identiques dans toutes les langues.
-        val sources = listOf("SettingsActivity.kt", "ui/Clocks.kt", "ui/Agenda.kt", "ui/MediaCard.kt", "ui/StandByScreen.kt")
+        val sources = listOf(
+            "SettingsActivity.kt",
+            "ui/Clocks.kt",
+            "ui/Agenda.kt",
+            "ui/MediaCard.kt",
+            "ui/StandByScreen.kt",
+            "ui/StatusRow.kt"
+        )
             .map { File("src/main/java/fr/clementvassant/standbyclock/$it") }
         val hardcoded = sources.flatMap { file ->
             Regex("""(Text|Section)\("([^"]*)"""").findAll(file.readText())

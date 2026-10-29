@@ -75,7 +75,7 @@ private fun ClockPane(style: ClockStyle, state: ScreenState, portrait: Boolean, 
 private fun ClockFace(style: ClockStyle, state: ScreenState, portrait: Boolean, barUnderClock: Boolean) {
     val (now, colors, night) = Triple(state.now, state.colors, state.night)
     when (style) {
-        ClockStyle.DIGITAL -> DigitalClock(now, colors, showSeconds = !night, hourFormat = state.hourFormat)
+        ClockStyle.DIGITAL -> DigitalClock(now, colors, showSeconds = !night, hourFormat = state.hourFormat, status = state.status)
 
         ClockStyle.ANALOG -> AnalogClockWithDate(
             now,
@@ -85,10 +85,11 @@ private fun ClockFace(style: ClockStyle, state: ScreenState, portrait: Boolean, 
             // La semaine et sa liste n'ont pas la hauteur du mois : le cadran remplit alors son panneau.
             matchCalendar = !portrait && !state.showsAgenda,
             // Barre musique sous l'horloge : le calendrier, lui, garde toute la hauteur du panneau.
-            calendarHeight = if (barUnderClock) 1f + MEDIA_BAR_WEIGHT else 1f
+            calendarHeight = if (barUnderClock) 1f + MEDIA_BAR_WEIGHT else 1f,
+            status = state.status
         )
 
-        ClockStyle.MINIMAL -> MinimalClock(now, colors, state.hourFormat)
+        ClockStyle.MINIMAL -> MinimalClock(now, colors, state.hourFormat, status = state.status)
     }
 }
 

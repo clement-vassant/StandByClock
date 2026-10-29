@@ -61,4 +61,8 @@
     <string name="settings_launch">Start the clock</string>
     <string name="settings_auto_launch">Automatic start</string>
     <string name="settings_open_screen_saver">Open screen saver settings</string>
+    <string name="status_battery_percent">%1$d%%</string>
+    <string name="status_charging">charging</string>
+    <string name="status_low_battery">low battery</string>
+    <string name="status_next_alarm">Next alarm at %1$s</string>
 </resources>

@@ -67,4 +67,9 @@
     <string name="settings_launch">Lancer l\'horloge</string>
     <string name="settings_auto_launch">Lancement automatique</string>
     <string name="settings_open_screen_saver">Ouvrir les réglages d\'écran de veille</string>
+    <!-- Espace insécable : « 76 % » ne se coupe jamais. -->
+    <string name="status_battery_percent">%1$d %%</string>
+    <string name="status_charging">en charge</string>
+    <string name="status_low_battery">batterie faible</string>
+    <string name="status_next_alarm">Prochain réveil à %1$s</string>
 </resources>
