@@ -1,10 +1,10 @@
 plugins {
     // AGP 9 compile le Kotlin lui-même : le plugin org.jetbrains.kotlin.android ne s'applique plus ici.
-    id("com.android.application")
-    id("org.jetbrains.kotlin.plugin.compose")
-    id("org.jlleitschuh.gradle.ktlint")
-    id("io.gitlab.arturbosch.detekt")
-    id("io.github.takahirom.roborazzi")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ktlint)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.roborazzi)
 }
 
 // Version SemVer de l'app : la release la passe en -PappVersion=X.Y.Z (voir release.yml) ;
@@ -96,8 +96,8 @@ roborazzi {
 }
 
 ktlint {
-    // Même version que celle visée par les règles Compose (io.nlopez.compose.rules:ktlint).
-    version.set("1.8.0")
+    // Même version que celle visée par les règles Compose (voir gradle/libs.versions.toml).
+    version.set(libs.versions.ktlint)
     android.set(true)
 }
 
@@ -106,10 +106,10 @@ detekt {
     buildUponDefaultConfig = true
 }
 
-// detekt 1.23 est compilé avec Kotlin 2.0.21 : il doit tourner avec cette version, pas celle du projet.
+// detekt 1.23 est compilé avec une version de Kotlin plus ancienne (detektKotlin) : il doit tourner avec elle.
 configurations.matching { it.name == "detekt" }.configureEach {
     resolutionStrategy.eachDependency {
-        if (requested.group == "org.jetbrains.kotlin") useVersion("2.0.21")
+        if (requested.group == "org.jetbrains.kotlin") useVersion(libs.versions.detektKotlin.get())
     }
 }
 
@@ -120,38 +120,38 @@ kotlin {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2026.09.00")
+    val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.foundation:foundation")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.core:core-ktx:1.19.1")
-    implementation("androidx.activity:activity-compose:1.10.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.1")
-    implementation("androidx.savedstate:savedstate-ktx:1.3.0")
+    implementation(libs.compose.ui)
+    implementation(libs.compose.foundation)
+    implementation(libs.compose.material3)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.savedstate.ktx)
     // L'APK s'installe hors du Play Store : c'est profileinstaller qui précompile au premier lancement le code listé
     // dans src/main/baseline-prof.txt et les profils fournis par Compose.
-    implementation("androidx.profileinstaller:profileinstaller:1.4.1")
+    implementation(libs.androidx.profileinstaller)
 
-    testImplementation("junit:junit:4.13.2")
+    testImplementation(libs.junit)
     // Captures de référence sur la JVM (Robolectric) : StandByScreenshotTest.
     testImplementation(composeBom)
-    testImplementation("androidx.compose.ui:ui-test-junit4")
-    testImplementation("androidx.test.ext:junit:1.2.1")
-    testImplementation("org.robolectric:robolectric:4.17")
-    testImplementation("io.github.takahirom.roborazzi:roborazzi:1.75.0")
-    testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.75.0")
-    testImplementation("io.github.takahirom.roborazzi:roborazzi-junit-rule:1.75.0")
+    testImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.roborazzi.junit.rule)
 
     androidTestImplementation(composeBom)
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
     // Parcours de bout en bout : lanceur, boîte de permission, écran de veille, rotation (dossier androidTest/.../e2e).
-    androidTestImplementation("androidx.test.uiautomator:uiautomator:2.4.0")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    androidTestImplementation(libs.androidx.test.uiautomator)
+    debugImplementation(libs.compose.ui.test.manifest)
 
-    ktlintRuleset("io.nlopez.compose.rules:ktlint:0.6.8")
-    detektPlugins("io.nlopez.compose.rules:detekt:0.6.8")
+    ktlintRuleset(libs.compose.rules.ktlint)
+    detektPlugins(libs.compose.rules.detekt)
 }

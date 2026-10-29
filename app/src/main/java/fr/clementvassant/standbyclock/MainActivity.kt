@@ -81,10 +81,9 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         // Le réglage a pu changer pendant un passage par les réglages : on le relit à chaque reprise.
         requestedOrientation = activityOrientation(prefs.orientation)
-        val minutes = prefs.autoOffMinutes
-        if (minutes <= 0) return
+        val remaining = autoOffDelayMillis(launchedAt, prefs.autoOffMinutes, SystemClock.elapsedRealtime()) ?: return
         autoOff = lifecycleScope.launch {
-            delay(launchedAt + minutes * MILLIS_PER_MINUTE - SystemClock.elapsedRealtime())
+            delay(remaining)
             // Pas d'image fixe pendant des heures : on laisse l'écran s'éteindre et on ferme l'horloge.
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             finish()

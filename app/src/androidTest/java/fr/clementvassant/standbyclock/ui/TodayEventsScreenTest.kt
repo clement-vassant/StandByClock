@@ -36,6 +36,10 @@ class TodayEventsScreenTest {
     @get:Rule
     val rule = createComposeRule()
 
+    // Les heures attendues sont en 24 h, quelle que soit la langue de l'émulateur.
+    @get:Rule
+    val hourFormat = SystemHourFormatRule()
+
     private val context: Context = ApplicationProvider.getApplicationContext()
     private lateinit var prefs: ClockPrefs
 

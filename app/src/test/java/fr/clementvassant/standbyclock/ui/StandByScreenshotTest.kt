@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.provider.Settings
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
@@ -60,6 +61,8 @@ class StandByScreenshotTest(private val case: Case) {
         // Téléphone américain : textes en anglais, semaine du dimanche au samedi.
         if (case.english) RuntimeEnvironment.setQualifiers("+en-rUS")
         context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE).edit().clear().commit()
+        // Écriture des heures du téléphone, explicite : le défaut de Robolectric dépend de la langue.
+        Settings.System.putString(context.contentResolver, Settings.System.TIME_12_24, if (case.hour12) "12" else "24")
         prefs = ClockPrefs(context).apply {
             style = case.style
             showCalendar = case.showCalendar
@@ -108,7 +111,7 @@ class StandByScreenshotTest(private val case: Case) {
 
     /**
      * Un cas : style, jour ou nuit, taille d'écran (dp), événements du jour, calendrier affiché ou masqué,
-     * musique en cours, horloge tournée par « Toujours paysage », et langue (anglais des États-Unis).
+     * musique en cours, horloge tournée par « Toujours paysage », téléphone réglé en 12 h, et langue (anglais des États-Unis).
      */
     class Case(
         val style: ClockStyle,
@@ -118,6 +121,7 @@ class StandByScreenshotTest(private val case: Case) {
         val showCalendar: Boolean = true,
         val media: Boolean = false,
         val forceLandscape: Boolean = false,
+        val hour12: Boolean = false,
         val english: Boolean = false,
         private val suffix: String = ""
     ) {
@@ -169,6 +173,10 @@ class StandByScreenshotTest(private val case: Case) {
             Case(ClockStyle.DIGITAL, night = true, portrait = false, showCalendar = false, media = true, suffix = "-musique-carte"),
             // Écran de veille en portrait avec « Toujours paysage » : tout l'écran est couché d'un quart de tour.
             Case(ClockStyle.DIGITAL, night = false, portrait = true, forceLandscape = true, suffix = "-toujours-paysage"),
+            // Téléphone en 12 h : « 02:15 » sans AM/PM sur l'horloge, AM/PM dans l'agenda.
+            Case(ClockStyle.DIGITAL, night = false, portrait = false, events = TODAY_EVENTS, hour12 = true, suffix = "-evenements-12h"),
+            Case(ClockStyle.MINIMAL, night = false, portrait = false, hour12 = true, suffix = "-12h"),
+            Case(ClockStyle.DIGITAL, night = true, portrait = false, hour12 = true, suffix = "-12h"),
             // En anglais aux États-Unis : date, mois et semaine du dimanche au samedi, événements, grande date.
             Case(ClockStyle.DIGITAL, night = false, portrait = false, english = true),
             Case(ClockStyle.DIGITAL, night = false, portrait = false, events = TODAY_EVENTS, english = true, suffix = "-evenements"),
