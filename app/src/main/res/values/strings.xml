@@ -8,4 +8,64 @@
     <string name="media_listener">StandBy Clock : musique en cours</string>
     <string name="help_screen_saver">Pendant la charge : activez l\'écran de veille « StandBy Clock » avec « Pendant la charge ».</string>
     <string name="help_routines">À heure fixe ou selon un mode : dans vos routines ou outils d\'automatisation (par exemple Modes et routines sur Samsung, ou Tasker), ajoutez l\'action « Ouvrir une app » et choisissez « StandBy Clock » : le jour et la nuit suivent la plage horaire du mode Auto. Pour forcer le jour ou la nuit une fois, faites un appui long sur l\'icône.</string>
+
+    <!-- Dates : langue des noms de jours et de mois, celle de ces textes (voir ui/DateTexts.kt) -->
+    <string name="date_language">fr</string>
+    <string name="date_full_pattern">EEEE d MMMM</string>
+    <string-array name="week_initials">
+        <item>L</item>
+        <item>M</item>
+        <item>M</item>
+        <item>J</item>
+        <item>V</item>
+        <item>S</item>
+        <item>D</item>
+    </string-array>
+
+    <!-- Événements du jour, à côté de l'horloge -->
+    <string name="agenda_all_day">Journée</string>
+    <string name="agenda_ends_at">→ %1$s</string>
+    <string name="agenda_ongoing">En cours</string>
+    <string name="agenda_untitled">(Sans titre)</string>
+    <string name="agenda_week_number">semaine %1$d</string>
+    <plurals name="agenda_more_events">
+        <item quantity="one">+%1$d autre</item>
+        <item quantity="many">+%1$d autres</item>
+        <item quantity="other">+%1$d autres</item>
+    </plurals>
+
+    <!-- Réglages -->
+    <string name="settings_style">Style d\'horloge</string>
+    <string name="style_digital">Digital</string>
+    <string name="style_analog">Analogique</string>
+    <string name="style_minimal">Minimal</string>
+    <string name="settings_show_calendar">Afficher le calendrier</string>
+    <string name="settings_show_calendar_help">Il change de côté avec l\'horloge chaque heure, pour protéger l\'écran du marquage.</string>
+    <string name="settings_show_media">Afficher la musique en cours</string>
+    <string name="settings_media_access_help">Pour lire et piloter la musique (Spotify…), StandBy Clock a besoin de l\'accès aux notifications.</string>
+    <string name="settings_media_access_button">Autoriser l\'accès aux notifications</string>
+    <string name="settings_show_events">Afficher les événements du jour</string>
+    <string name="settings_show_events_help">Le jour, ceux qui ne sont pas encore terminés, à côté de l\'horloge. La nuit, le calendrier du mois seul.</string>
+    <string name="settings_calendar_access_help">Pour afficher les événements, StandBy Clock doit pouvoir lire l\'agenda.</string>
+    <string name="settings_calendar_access_button">Autoriser l\'accès à l\'agenda</string>
+    <string name="settings_shown_calendars">Agendas affichés</string>
+    <string name="settings_shown_calendars_help">Cocher les agendas à afficher. Un agenda ajouté plus tard sur l\'appareil reste masqué tant qu\'il n\'est pas coché.</string>
+    <string name="settings_no_calendars">Aucun agenda sur cet appareil.</string>
+    <string name="settings_day_night">Jour ou nuit</string>
+    <string name="theme_auto">Auto</string>
+    <string name="theme_day">Jour</string>
+    <string name="theme_night">Nuit</string>
+    <string name="settings_night_from">Nuit de</string>
+    <string name="settings_night_to">à</string>
+    <string name="settings_orientation">Orientation</string>
+    <string name="orientation_auto">Automatique</string>
+    <string name="orientation_landscape">Toujours paysage</string>
+    <string name="settings_orientation_auto_help">Suit la rotation du téléphone : côte à côte en paysage, horloge et calendrier l\'un au-dessus de l\'autre en portrait.</string>
+    <string name="settings_orientation_landscape_help">L\'app reste en paysage. Si l\'écran de veille s\'affiche en portrait, l\'horloge y est tournée pour se lire téléphone couché, haut de l\'écran vers la gauche.</string>
+    <string name="settings_auto_off">Éteindre après</string>
+    <string name="auto_off_hours">%1$d h</string>
+    <string name="auto_off_never">Jamais</string>
+    <string name="settings_launch">Lancer l\'horloge</string>
+    <string name="settings_auto_launch">Lancement automatique</string>
+    <string name="settings_open_screen_saver">Ouvrir les réglages d\'écran de veille</string>
 </resources>
