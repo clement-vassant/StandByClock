@@ -14,8 +14,7 @@ class TargetSdkTest {
     private val buildScript = File("build.gradle.kts").readText()
     private val manifest = File("src/main/AndroidManifest.xml").readText()
 
-    private fun targetSdkOf(script: String): Int? =
-        Regex("""targetSdk = (\d+)""").find(script)?.groupValues?.get(1)?.toInt()
+    private fun targetSdkOf(script: String): Int? = Regex("""targetSdk = (\d+)""").find(script)?.groupValues?.get(1)?.toInt()
 
     @Test
     fun `the app targets Android 16`() {
