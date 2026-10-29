@@ -69,15 +69,16 @@ fun agendaLines(agenda: List<CalendarEvent>, maxLines: Int = MAX_AGENDA_LINES): 
 
 /**
  * Heure affichée devant le titre : « Journée », l'heure de fin d'un événement en cours (« → 15:00 »,
- * seule info utile pendant l'événement ; « En cours » s'il finit un autre jour), sinon l'heure de début.
+ * seule info utile pendant l'événement ; « En cours » s'il finit un autre jour), sinon l'heure de début,
+ * écrites en 12 h (avec AM/PM) ou en 24 h comme le téléphone.
  */
-fun agendaTime(event: CalendarEvent, now: ZonedDateTime): String {
+fun agendaTime(event: CalendarEvent, now: ZonedDateTime, hourFormat: HourFormat): String {
     val nowMillis = now.toInstant().toEpochMilli()
     val end = Instant.ofEpochMilli(event.end).atZone(now.zone)
     return when {
         event.allDay -> "Journée"
-        event.begin > nowMillis -> Instant.ofEpochMilli(event.begin).atZone(now.zone).hhmm()
-        end.toLocalDate() == now.toLocalDate() -> "→ ${end.hhmm()}"
+        event.begin > nowMillis -> Instant.ofEpochMilli(event.begin).atZone(now.zone).scheduleTime(hourFormat)
+        end.toLocalDate() == now.toLocalDate() -> "→ ${end.scheduleTime(hourFormat)}"
         else -> "En cours"
     }
 }
@@ -88,7 +89,7 @@ fun isHappeningNow(event: CalendarEvent, now: ZonedDateTime): Boolean = event.al
 /** Dernière ligne quand tout ne tient pas : « +1 autre », « +3 autres ». */
 fun moreEventsLabel(count: Int): String = "+$count autre${if (count > 1) "s" else ""}"
 
-private fun ZonedDateTime.hhmm() = "%02d:%02d".format(hour, minute)
+private fun ZonedDateTime.scheduleTime(hourFormat: HourFormat) = scheduleTime(hour, minute, hourFormat)
 
 /** Libellé d'un agenda dans les réglages : son nom, et le compte s'il est différent. */
 fun CalendarInfo.label(): String = if (account.isBlank() || account == name) name else "$name ($account)"

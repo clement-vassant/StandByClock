@@ -1,6 +1,7 @@
 package fr.clementvassant.standbyclock
 
 import android.content.Context
+import android.provider.Settings
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.core.app.ApplicationProvider
@@ -37,6 +38,8 @@ class SettingsScreenshotTest(private val case: Case) {
     @Before
     fun prefs() {
         context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE).edit().clear().commit()
+        // Écriture des heures du téléphone, explicite : le défaut de Robolectric dépend de la langue.
+        Settings.System.putString(context.contentResolver, Settings.System.TIME_12_24, if (case.hour12) "12" else "24")
         prefs = ClockPrefs(context)
         if (case.configured) {
             prefs.apply {
@@ -70,9 +73,10 @@ class SettingsScreenshotTest(private val case: Case) {
         rule.onNodeWithTag(TAG_SETTINGS).captureRoboImage("src/test/screenshots/${case.name}.png", roborazziOptions = options)
     }
 
-    /** Un cas : premier lancement, ou accès accordés et réglages modifiés. */
-    class Case(val configured: Boolean) {
-        val name: String get() = if (configured) "reglages-personnalises" else "reglages-premier-lancement"
+    /** Un cas : premier lancement, ou accès accordés et réglages modifiés ; téléphone en 24 h ou en 12 h. */
+    class Case(val configured: Boolean, val hour12: Boolean = false) {
+        val name: String
+            get() = (if (configured) "reglages-personnalises" else "reglages-premier-lancement") + if (hour12) "-12h" else ""
 
         override fun toString() = name
     }
@@ -84,6 +88,11 @@ class SettingsScreenshotTest(private val case: Case) {
 
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "{0}")
-        fun cases(): List<Case> = listOf(Case(configured = false), Case(configured = true))
+        fun cases(): List<Case> = listOf(
+            Case(configured = false),
+            Case(configured = true),
+            // Plage de nuit en 12 h : « 10:00 PM » à « 07:00 AM ».
+            Case(configured = true, hour12 = true)
+        )
     }
 }
