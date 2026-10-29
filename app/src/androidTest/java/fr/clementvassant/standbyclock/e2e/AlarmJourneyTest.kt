@@ -1,5 +1,8 @@
 package fr.clementvassant.standbyclock.e2e
 
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Intent
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
@@ -11,8 +14,7 @@ import fr.clementvassant.standbyclock.MainActivity
 import fr.clementvassant.standbyclock.ThemeMode
 import fr.clementvassant.standbyclock.ui.TAG_ALARM
 import fr.clementvassant.standbyclock.ui.TAG_BATTERY
-import java.time.DayOfWeek
-import java.time.LocalDateTime
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import org.junit.After
 import org.junit.Assert.assertTrue
@@ -21,26 +23,28 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Le prochain réveil sur la ligne de la date, tel que l'app Horloge le programme : les alarmes sont posées par
- * l'intention publique `SET_ALARM` (sans écran), comme le ferait l'utilisateur, et l'horloge suit sans être relancée.
- * Les données de l'app Horloge sont effacées avant et après : aucune alarme d'un autre test ne vient s'intercaler.
+ * Le prochain réveil sur la ligne de la date. Les alarmes sont programmées par `AlarmManager.setAlarmClock`, comme
+ * le fait une app Horloge (l'image d'émulateur de la CI n'en a pas) : l'app les lit par le même chemin système et
+ * suit sans être relancée. Elles sont annulées après chaque test.
  */
 @RunWith(AndroidJUnit4::class)
 class AlarmJourneyTest {
     private val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+    private val context = InstrumentationRegistry.getInstrumentation().targetContext
+    private val alarms = context.getSystemService(AlarmManager::class.java)
+    private val scheduled = mutableListOf<PendingIntent>()
     private lateinit var prefs: ClockPrefs
 
     @Before
     fun freshStart() {
         prefs = E2e.freshStart()
-        clearAlarms()
         shell("dumpsys battery set ac 1")
         shell("dumpsys battery set level 76")
     }
 
     @After
     fun restore() {
-        clearAlarms()
+        scheduled.forEach(alarms::cancel)
         shell("dumpsys battery reset")
     }
 
@@ -61,8 +65,7 @@ class AlarmJourneyTest {
 
     @Test
     fun alarmBeyond24HoursIsHidden() = uiAutomator {
-        // Une alarme répétée un seul jour, dans trois jours : la prochaine sonnerie est au-delà de 24 heures.
-        setWeeklyAlarm(LocalDateTime.now().plusDays(DAYS_AHEAD).plusHours(1))
+        setAlarmAt(ZonedDateTime.now().plusDays(DAYS_AHEAD))
         E2e.open(MainActivity::class.java)
         clockScreen()
         byTag(TAG_BATTERY)
@@ -86,37 +89,27 @@ class AlarmJourneyTest {
         byTag(TAG_BATTERY)
     }
 
-    /** Pose une alarme dans [hours] heures et rend l'heure attendue à l'écran (« 07:00 »). */
+    /** Programme une alarme dans [hours] heures et rend l'heure attendue à l'écran (« 07:00 »). */
     private fun setAlarmIn(hours: Long): String {
-        val time = LocalDateTime.now().plusHours(hours)
-        shell("am start -a android.intent.action.SET_ALARM $SKIP_UI ${hourAndMinutes(time)}")
+        val time = ZonedDateTime.now().plusHours(hours)
+        setAlarmAt(time)
         return time.format(ALARM_FORMAT)
     }
 
-    private fun setWeeklyAlarm(time: LocalDateTime) {
-        val days = "--eial $EXTRA_DAYS ${calendarDay(time.dayOfWeek)}"
-        shell("am start -a android.intent.action.SET_ALARM $SKIP_UI ${hourAndMinutes(time)} $days")
-    }
-
-    private fun hourAndMinutes(time: LocalDateTime) = "--ei $EXTRA_HOUR ${time.hour} --ei $EXTRA_MINUTES ${time.minute}"
-
-    /** Les jours de `java.util.Calendar` : dimanche = 1, samedi = 7. */
-    private fun calendarDay(day: DayOfWeek) = day.value % DayOfWeek.SUNDAY.value + 1
-
-    /** Efface les alarmes de l'app Horloge (émulateur seulement : ses alarmes ne servent qu'aux tests). */
-    private fun clearAlarms() {
-        val clockApp = shell("cmd package resolve-activity --brief -a android.intent.action.SET_ALARM").lines()
-            .lastOrNull { "/" in it }?.substringBefore("/")?.trim()
-        if (clockApp != null) shell("pm clear $clockApp")
+    private fun setAlarmAt(time: ZonedDateTime) {
+        val code = scheduled.size
+        val show = PendingIntent.getActivity(context, code, Intent(context, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
+        // Rien n'écoute cette sonnerie : elle tombe bien après la fin du test, qui l'annule.
+        val ring = Intent(RING_ACTION).setPackage(context.packageName)
+        val operation = PendingIntent.getBroadcast(context, code, ring, PendingIntent.FLAG_IMMUTABLE)
+        alarms.setAlarmClock(AlarmManager.AlarmClockInfo(time.toInstant().toEpochMilli(), show), operation)
+        scheduled += operation
     }
 
     private fun shell(command: String): String = device.executeShellCommand(command)
 
     private companion object {
-        const val SKIP_UI = "--ez android.intent.extra.alarm.SKIP_UI true"
-        const val EXTRA_HOUR = "android.intent.extra.alarm.HOUR"
-        const val EXTRA_MINUTES = "android.intent.extra.alarm.MINUTES"
-        const val EXTRA_DAYS = "android.intent.extra.alarm.DAYS"
+        const val RING_ACTION = "fr.clementvassant.standbyclock.e2e.TEST_ALARM"
         const val DAYS_AHEAD = 3L
         val ALARM_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
     }

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+        Version de test seulement : le parcours e2e du réveil programme lui-même ses alarmes avec
+        AlarmManager.setAlarmClock, ce qui demande l'alarme exacte. L'image d'émulateur de la CI n'a pas d'app
+        Horloge pour le faire à sa place. L'app publiée ne programme rien et ne demande aucune autorisation.
+    -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission
+        android:name="android.permission.SCHEDULE_EXACT_ALARM"
+        android:maxSdkVersion="32" />
+</manifest>
