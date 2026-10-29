@@ -9,8 +9,12 @@ import androidx.test.uiautomator.Until
 import androidx.test.uiautomator.uiAutomator
 import fr.clementvassant.standbyclock.ClockPrefs
 import fr.clementvassant.standbyclock.ClockStyle
+import fr.clementvassant.standbyclock.NIGHT_BRIGHTNESS
 import fr.clementvassant.standbyclock.OrientationMode
 import fr.clementvassant.standbyclock.R
+import fr.clementvassant.standbyclock.ThemeMode
+import fr.clementvassant.standbyclock.ui.STATE_DAY
+import fr.clementvassant.standbyclock.ui.STATE_NIGHT
 import fr.clementvassant.standbyclock.ui.TAG_SCREEN
 import fr.clementvassant.standbyclock.ui.clockTag
 import fr.clementvassant.standbyclock.ui.dateFormatter
@@ -19,6 +23,7 @@ import fr.clementvassant.standbyclock.ui.fullDatePattern
 import java.time.LocalDate
 import java.util.Locale
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -28,6 +33,7 @@ import org.junit.runner.RunWith
  * L'écran de veille, tel qu'Android le lance pendant la charge : l'horloge et le calendrier s'affichent en entier,
  * sans se chevaucher. Sur un téléphone, Android garde l'écran de veille en portrait : avec « Toujours paysage »,
  * c'est l'app qui couche l'horloge, ce que montre la ligne de date, plus haute que large une fois tournée.
+ * La nuit, l'écran de veille impose la luminosité minimale ; le jour, il laisse le niveau atténué du système.
  */
 @RunWith(AndroidJUnit4::class)
 class ScreenSaverJourneyTest {
@@ -81,6 +87,44 @@ class ScreenSaverJourneyTest {
         assertTrue("L'écran de veille est resté affiché", device.wait(Until.gone(By.res(TAG_SCREEN)), E2e.SCREEN_TIMEOUT_MS))
     }
 
+    @Test
+    fun nightAsksForTheLowestBrightness() = uiAutomator {
+        prefs.themeMode = ThemeMode.NIGHT
+        screenSaver.start()
+        clockScreenIn(STATE_NIGHT)
+        assertEquals(NIGHT_BRIGHTNESS, waitForBrightnessOverride { it == NIGHT_BRIGHTNESS })
+        capture("ecran-de-veille-nuit")
+    }
+
+    @Test
+    fun dayLeavesTheBrightnessToTheSystem() = uiAutomator {
+        screenSaver.start()
+        clockScreenIn(STATE_DAY)
+        // Rien d'imposé : Android affiche NaN (aucune valeur de fenêtre transmise au gestionnaire d'énergie).
+        assertTrue("Luminosité imposée le jour", waitForBrightnessOverride { it.isNaN() }.isNaN())
+    }
+
+    /**
+     * Luminosité que la fenêtre au premier plan impose au système, lue dans `dumpsys power` : c'est ce qu'Android
+     * applique vraiment, pas seulement ce que l'app a demandé. Relue jusqu'à la valeur attendue ou l'expiration du délai,
+     * le temps que Compose signale le jour ou la nuit et que le gestionnaire de fenêtres transmette la valeur.
+     */
+    private fun waitForBrightnessOverride(expected: (Float) -> Boolean): Float {
+        val deadline = System.currentTimeMillis() + E2e.SCREEN_TIMEOUT_MS
+        var override = brightnessOverride()
+        while (!expected(override) && System.currentTimeMillis() < deadline) {
+            Thread.sleep(BRIGHTNESS_POLL_MS)
+            override = brightnessOverride()
+        }
+        return override
+    }
+
+    private fun brightnessOverride(): Float = device.executeShellCommand("dumpsys power").lineSequence()
+        .map { it.trim() }
+        .firstOrNull { it.startsWith(BRIGHTNESS_OVERRIDE_KEY) }
+        ?.substringAfter('=')?.toFloatOrNull()
+        ?: error("$BRIGHTNESS_OVERRIDE_KEY absent de dumpsys power")
+
     /** La ligne de date sous les chiffres de l'horloge numérique (« Jeudi 22 octobre »), formatée comme dans `Clocks.kt`. */
     private fun UiAutomatorTestScope.dateLine() = byTag(clockTag(ClockStyle.DIGITAL)).let { clock ->
         val locale = dateLocale(E2e.context.getString(R.string.date_language), Locale.getDefault())
@@ -88,3 +132,6 @@ class ScreenSaverJourneyTest {
         checkNotNull(clock.wait(Until.findObject(By.text(today)), E2e.SCREEN_TIMEOUT_MS)) { "Date « $today » absente de l'horloge" }
     }
 }
+
+private const val BRIGHTNESS_OVERRIDE_KEY = "mScreenBrightnessOverrideFromWindowManager="
+private const val BRIGHTNESS_POLL_MS = 500L

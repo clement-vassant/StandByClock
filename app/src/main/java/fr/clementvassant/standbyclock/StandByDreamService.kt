@@ -53,7 +53,7 @@ class StandByDreamService :
         super.onAttachedToWindow()
         isFullscreen = true
         isInteractive = true // toucher : jour/nuit, appui long : calendrier, balayage : style
-        isScreenBright = false
+        isScreenBright = false // le jour, niveau atténué du système ; la nuit, la fenêtre impose le minimum
 
         val prefs = ClockPrefs(this)
         val view = ComposeView(this).apply {
@@ -66,7 +66,7 @@ class StandByDreamService :
                 StandByScreen(
                     prefs = prefs,
                     forcedTheme = null,
-                    onNightModeChange = {},
+                    onNightModeChange = { night -> window.applyClockBrightness(night, ClockSurface.SCREEN_SAVER) },
                     onOpenSettings = null,
                     modifier = orientation
                 )
