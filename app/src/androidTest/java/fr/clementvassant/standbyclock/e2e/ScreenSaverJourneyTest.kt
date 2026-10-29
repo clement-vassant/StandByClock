@@ -92,7 +92,8 @@ class ScreenSaverJourneyTest {
         prefs.themeMode = ThemeMode.NIGHT
         screenSaver.start()
         clockScreenIn(STATE_NIGHT)
-        assertEquals(NIGHT_BRIGHTNESS, waitForBrightnessOverride { it == NIGHT_BRIGHTNESS })
+        val override = WindowBrightness.waitFor { it == NIGHT_BRIGHTNESS }
+        assertEquals(WindowBrightness.diagnostics(), NIGHT_BRIGHTNESS, override)
         capture("ecran-de-veille-nuit")
     }
 
@@ -101,29 +102,8 @@ class ScreenSaverJourneyTest {
         screenSaver.start()
         clockScreenIn(STATE_DAY)
         // Rien d'imposé : Android affiche NaN (aucune valeur de fenêtre transmise au gestionnaire d'énergie).
-        assertTrue("Luminosité imposée le jour", waitForBrightnessOverride { it.isNaN() }.isNaN())
+        assertTrue("Luminosité imposée le jour", WindowBrightness.waitFor { it.isNaN() }.isNaN())
     }
-
-    /**
-     * Luminosité que la fenêtre au premier plan impose au système, lue dans `dumpsys power` : c'est ce qu'Android
-     * applique vraiment, pas seulement ce que l'app a demandé. Relue jusqu'à la valeur attendue ou l'expiration du délai,
-     * le temps que Compose signale le jour ou la nuit et que le gestionnaire de fenêtres transmette la valeur.
-     */
-    private fun waitForBrightnessOverride(expected: (Float) -> Boolean): Float {
-        val deadline = System.currentTimeMillis() + E2e.SCREEN_TIMEOUT_MS
-        var override = brightnessOverride()
-        while (!expected(override) && System.currentTimeMillis() < deadline) {
-            Thread.sleep(BRIGHTNESS_POLL_MS)
-            override = brightnessOverride()
-        }
-        return override
-    }
-
-    private fun brightnessOverride(): Float = device.executeShellCommand("dumpsys power").lineSequence()
-        .map { it.trim() }
-        .firstOrNull { it.startsWith(BRIGHTNESS_OVERRIDE_KEY) }
-        ?.substringAfter('=')?.toFloatOrNull()
-        ?: error("$BRIGHTNESS_OVERRIDE_KEY absent de dumpsys power")
 
     /** La ligne de date sous les chiffres de l'horloge numérique (« Jeudi 22 octobre »), formatée comme dans `Clocks.kt`. */
     private fun UiAutomatorTestScope.dateLine() = byTag(clockTag(ClockStyle.DIGITAL)).let { clock ->
@@ -132,6 +112,3 @@ class ScreenSaverJourneyTest {
         checkNotNull(clock.wait(Until.findObject(By.text(today)), E2e.SCREEN_TIMEOUT_MS)) { "Date « $today » absente de l'horloge" }
     }
 }
-
-private const val BRIGHTNESS_OVERRIDE_KEY = "mScreenBrightnessOverrideFromWindowManager="
-private const val BRIGHTNESS_POLL_MS = 500L

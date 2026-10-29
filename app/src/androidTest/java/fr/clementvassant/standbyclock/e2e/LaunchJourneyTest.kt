@@ -12,6 +12,7 @@ import fr.clementvassant.standbyclock.ClockPrefs
 import fr.clementvassant.standbyclock.ClockStyle
 import fr.clementvassant.standbyclock.EXTRA_THEME
 import fr.clementvassant.standbyclock.MainActivity
+import fr.clementvassant.standbyclock.NIGHT_BRIGHTNESS
 import fr.clementvassant.standbyclock.R
 import fr.clementvassant.standbyclock.SettingsActivity
 import fr.clementvassant.standbyclock.ThemeMode
@@ -71,6 +72,8 @@ class LaunchJourneyTest {
     fun nightAndDayShortcutsForceTheirMode() = uiAutomator {
         E2e.open(shortcutIntent(THEME_NIGHT))
         clockScreenIn(STATE_NIGHT)
+        // Référence pour l'écran de veille : l'app impose la luminosité minimale la nuit.
+        assertEquals(WindowBrightness.diagnostics(), NIGHT_BRIGHTNESS, WindowBrightness.waitFor { it == NIGHT_BRIGHTNESS })
         capture("raccourci-horloge-nuit")
 
         // Un toucher inverse jour et nuit jusqu'à la prochaine bascule.
