@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Mêmes vérifications que la CI, à lancer avant de pousser.
-#   scripts/check.sh          lint + tests unitaires + captures de référence + APK
-#   scripts/check.sh --all    idem + tests d'interface et parcours e2e (émulateur ou téléphone branché)
+#   scripts/check.sh          lint + tests unitaires + captures de référence + APK debug et release (R8)
+#   scripts/check.sh --all    idem + tests d'interface et parcours e2e, aussi sur l'APK release (émulateur ou téléphone)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -13,8 +13,7 @@ gradle() {
 # un peu, donc on produit seulement le rapport de comparaison (app/build/outputs/roborazzi) sans échouer.
 if [[ "$(uname -s)" == "Linux" ]]; then screenshots=verifyRoborazziDebug; else screenshots=compareRoborazziDebug; fi
 
-tasks=(ktlintCheck detekt lintDebug testDebugUnitTest "$screenshots" assembleDebug)
+gradle ktlintCheck detekt lintDebug testDebugUnitTest "$screenshots" assembleDebug assembleRelease
 if [[ "${1:-}" == "--all" ]]; then
-    tasks+=(connectedDebugAndroidTest)
+    scripts/connected-tests.sh
 fi
-gradle "${tasks[@]}"

@@ -72,7 +72,8 @@ jobs:
   instrumented-tests:
     name: Tests d'interface et parcours e2e (émulateur)
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    # Deux passes : l'APK debug, puis quelques parcours sur l'APK release (R8).
+    timeout-minutes: 45
     env:
       API_LEVEL: 34
     steps:
@@ -110,9 +111,9 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
           script: echo "Émulateur créé et mis en cache."
-      # Tests Compose et parcours e2e UI Automator (androidTest/.../e2e). Le script tient sur une ligne : l'action
-      # lance chaque ligne à part, et les captures des parcours doivent être récupérées même si un test échoue.
-      - name: Tests Compose et parcours e2e sur l'émulateur
+      # Tests Compose et parcours e2e UI Automator (androidTest/.../e2e) sur l'APK debug, puis parcours courts sur
+      # l'APK release passé par R8 (module release-smoke). Le script récupère les captures même si un test échoue.
+      - name: Tests Compose et parcours e2e (debug puis release) sur l'émulateur
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ env.API_LEVEL }}
@@ -121,7 +122,7 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: ./gradlew connectedDebugAndroidTest; status=$?; adb pull /sdcard/Download/standbyclock-e2e app/build/e2e-captures || true; exit $status
+          script: scripts/connected-tests.sh
       # Le rapport HTML n'est lisible qu'en téléchargeant l'artefact : on écrit aussi les tests en échec
       # et leur message dans le journal du job.
       - name: Tests en échec
