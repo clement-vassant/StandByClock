@@ -31,9 +31,9 @@ import fr.clementvassant.standbyclock.AgendaTime
 import fr.clementvassant.standbyclock.CalendarEvent
 import fr.clementvassant.standbyclock.DAYS_PER_WEEK
 import fr.clementvassant.standbyclock.MAX_AGENDA_LINES
+import fr.clementvassant.standbyclock.R
 import fr.clementvassant.standbyclock.agendaTime
 import fr.clementvassant.standbyclock.isHappeningNow
-import fr.clementvassant.standbyclock.R
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZonedDateTime
