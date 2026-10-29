@@ -48,6 +48,10 @@ class BatteryJourneyTest {
         // Débranché et faible : la batterie revient.
         battery("set level 12")
         byText("12 %")
+        // Sous le seuil de batterie faible, l'interface système de l'émulateur plante et la capture de l'app sort
+        // noire tant qu'elle n'est pas rouverte : on la rouvre pour une capture lisible.
+        E2e.open(MainActivity::class.java)
+        byText("12 %")
         capture("batterie-faible")
     }
 
