@@ -68,25 +68,33 @@ fun agendaLines(agenda: List<CalendarEvent>, maxLines: Int = MAX_AGENDA_LINES): 
 }
 
 /**
- * Heure affichée devant le titre : « Journée », l'heure de fin d'un événement en cours (« → 15:00 »,
- * seule info utile pendant l'événement ; « En cours » s'il finit un autre jour), sinon l'heure de début.
+ * Heure affichée devant le titre : toute la journée, l'heure de fin d'un événement en cours (« → 15:00 »,
+ * seule info utile pendant l'événement ; « en cours » s'il finit un autre jour), sinon l'heure de début.
+ * Le libellé lui-même vient des ressources, dans la langue de l'appareil.
  */
-fun agendaTime(event: CalendarEvent, now: ZonedDateTime): String {
+sealed interface AgendaTime {
+    data object AllDay : AgendaTime
+
+    data class StartsAt(val time: String) : AgendaTime
+
+    data class EndsAt(val time: String) : AgendaTime
+
+    data object Ongoing : AgendaTime
+}
+
+fun agendaTime(event: CalendarEvent, now: ZonedDateTime): AgendaTime {
     val nowMillis = now.toInstant().toEpochMilli()
     val end = Instant.ofEpochMilli(event.end).atZone(now.zone)
     return when {
-        event.allDay -> "Journée"
-        event.begin > nowMillis -> Instant.ofEpochMilli(event.begin).atZone(now.zone).hhmm()
-        end.toLocalDate() == now.toLocalDate() -> "→ ${end.hhmm()}"
-        else -> "En cours"
+        event.allDay -> AgendaTime.AllDay
+        event.begin > nowMillis -> AgendaTime.StartsAt(Instant.ofEpochMilli(event.begin).atZone(now.zone).hhmm())
+        end.toLocalDate() == now.toLocalDate() -> AgendaTime.EndsAt(end.hhmm())
+        else -> AgendaTime.Ongoing
     }
 }
 
 /** Événement en cours (ou de toute la journée) : son heure est en accent. */
 fun isHappeningNow(event: CalendarEvent, now: ZonedDateTime): Boolean = event.allDay || event.begin <= now.toInstant().toEpochMilli()
-
-/** Dernière ligne quand tout ne tient pas : « +1 autre », « +3 autres ». */
-fun moreEventsLabel(count: Int): String = "+$count autre${if (count > 1) "s" else ""}"
 
 private fun ZonedDateTime.hhmm() = "%02d:%02d".format(hour, minute)
 

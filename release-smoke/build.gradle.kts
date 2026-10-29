@@ -1,8 +1,8 @@
 plugins {
     // Module de test à part, qui vise l'APK release de :app, passé par R8 comme celui qu'on publie.
-    id("com.android.test")
-    id("org.jlleitschuh.gradle.ktlint")
-    id("io.gitlab.arturbosch.detekt")
+    alias(libs.plugins.android.test)
+    alias(libs.plugins.ktlint)
+    alias(libs.plugins.detekt)
 }
 
 android {
@@ -40,7 +40,7 @@ androidComponents {
 }
 
 ktlint {
-    version.set("1.8.0")
+    version.set(libs.versions.ktlint)
     android.set(true)
 }
 
@@ -49,10 +49,10 @@ detekt {
     buildUponDefaultConfig = true
 }
 
-// detekt 1.23 est compilé avec Kotlin 2.0.21 : il doit tourner avec cette version, pas celle du projet.
+// detekt 1.23 est compilé avec une version de Kotlin plus ancienne (detektKotlin) : il doit tourner avec elle.
 configurations.matching { it.name == "detekt" }.configureEach {
     resolutionStrategy.eachDependency {
-        if (requested.group == "org.jetbrains.kotlin") useVersion("2.0.21")
+        if (requested.group == "org.jetbrains.kotlin") useVersion(libs.versions.detektKotlin.get())
     }
 }
 
@@ -68,12 +68,12 @@ android.compileOptions {
 }
 
 dependencies {
-    implementation("junit:junit:4.13.2")
-    implementation("androidx.test.ext:junit:1.2.1")
-    implementation("androidx.test:runner:1.6.2")
-    implementation("androidx.test.uiautomator:uiautomator:2.4.0")
+    implementation(libs.junit)
+    implementation(libs.androidx.test.ext.junit)
+    implementation(libs.androidx.test.runner)
+    implementation(libs.androidx.test.uiautomator)
 
     // Mêmes règles que :app : la configuration detekt commune a une section Compose.
-    ktlintRuleset("io.nlopez.compose.rules:ktlint:0.6.8")
-    detektPlugins("io.nlopez.compose.rules:detekt:0.6.8")
+    ktlintRuleset(libs.compose.rules.ktlint)
+    detektPlugins(libs.compose.rules.detekt)
 }
