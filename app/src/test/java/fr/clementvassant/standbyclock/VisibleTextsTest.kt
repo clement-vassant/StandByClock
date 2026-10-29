@@ -1,6 +1,7 @@
 package fr.clementvassant.standbyclock
 
 import java.io.File
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -24,9 +25,31 @@ class VisibleTextsTest {
         // Le calendrier échange sa place avec l'horloge chaque heure : un libellé « à droite » faisait croire
         // à un réglage de côté, alors que l'interrupteur masque le calendrier.
         for (side in listOf("à droite", "à gauche")) {
-            assertFalse("SettingsActivity promet un calendrier $side", Regex("[Cc]alendrier[^\"]*$side").containsMatchIn(settings))
+            assertFalse("strings.xml promet un calendrier $side", Regex("[Cc]alendrier[^<]*$side").containsMatchIn(strings))
         }
-        assertTrue("Afficher le calendrier" in settings)
+        assertTrue("Afficher le calendrier" in strings)
+    }
+
+    @Test
+    fun `visible texts come from the resources`() {
+        // Un texte écrit en dur ne serait pas traduit : tout libellé passe par strings.xml. Seuls restent les
+        // formats de nombres (« %02d ») et la ponctuation (« : »), identiques dans toutes les langues.
+        val sources = listOf(
+            "SettingsActivity.kt",
+            "ui/Clocks.kt",
+            "ui/Agenda.kt",
+            "ui/MediaCard.kt",
+            "ui/StandByScreen.kt",
+            "ui/StatusRow.kt"
+        )
+            .map { File("src/main/java/fr/clementvassant/standbyclock/$it") }
+        val hardcoded = sources.flatMap { file ->
+            Regex("""(Text|Section)\("([^"]*)"""").findAll(file.readText())
+                .filter { Regex("""\p{L}""").containsMatchIn(it.groupValues[2].replace(Regex("%[0-9$]*[a-z]"), "")) }
+                .map { "${file.name} : ${it.value}" }
+                .toList()
+        }
+        assertEquals(emptyList<String>(), hardcoded)
     }
 
     @Test

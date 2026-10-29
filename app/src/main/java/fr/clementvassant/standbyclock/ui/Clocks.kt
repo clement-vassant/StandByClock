@@ -37,14 +37,10 @@ import fr.clementvassant.standbyclock.StatusLine
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
-
-private val dateFormat = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENCH)
 
 /** Texte batterie et réveil du style analogique, et la place réservée sous le cadran (la ligne et sa marge, en lignes). */
 private val ANALOG_STATUS_TEXT = 20.sp
@@ -83,7 +79,7 @@ fun DigitalClock(
                 Text("%02d".format(now.minute), color = colors.accent, fontSize = digits, fontWeight = FontWeight.Bold)
             }
             DateAndStatus(small) {
-                Text(now.format(dateFormat).replaceFirstChar { it.uppercase() }, color = colors.secondary, fontSize = small)
+                Text(now.format(fullDateFormat()).replaceFirstChar { it.uppercase() }, color = colors.secondary, fontSize = small)
                 StatusRow(status, colors, small)
             }
         }
@@ -138,13 +134,13 @@ fun AnalogClockWithDate(
         if (showDate) {
             Column {
                 Text(
-                    now.format(DateTimeFormatter.ofPattern("EEEE", Locale.FRENCH)).uppercase(),
+                    now.format(weekdayFormat()).uppercase(),
                     color = colors.accent,
                     fontSize = 30.sp,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(now.dayOfMonth.toString(), color = colors.primary, fontSize = 140.sp, fontWeight = FontWeight.Bold)
-                Text(now.format(DateTimeFormatter.ofPattern("MMMM", Locale.FRENCH)), color = colors.secondary, fontSize = 30.sp)
+                Text(now.format(monthFormat()), color = colors.secondary, fontSize = 30.sp)
             }
         }
     }
@@ -189,7 +185,7 @@ fun MinimalClock(now: ZonedDateTime, colors: ClockColors, modifier: Modifier = M
             Text(now.hhmm(), color = colors.primary, fontSize = digits, fontWeight = FontWeight.Thin, fontFamily = FontFamily.SansSerif)
             DateAndStatus(small) {
                 Text(
-                    now.format(dateFormat),
+                    now.format(fullDateFormat()),
                     color = colors.secondary,
                     fontSize = small,
                     fontWeight = FontWeight.Light,
@@ -214,7 +210,7 @@ fun MonthCalendar(now: ZonedDateTime, colors: ClockColors, modifier: Modifier = 
         Column(Modifier.fillMaxWidth().testTag(TAG_CALENDAR)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
                 Text(
-                    now.format(DateTimeFormatter.ofPattern("MMMM", Locale.FRENCH)).uppercase(),
+                    now.format(monthFormat()).uppercase(),
                     color = colors.accent,
                     fontSize = (cell * 0.5f).asSp(),
                     fontWeight = FontWeight.SemiBold
@@ -222,7 +218,7 @@ fun MonthCalendar(now: ZonedDateTime, colors: ClockColors, modifier: Modifier = 
                 Text(now.year.toString(), color = colors.secondary, fontSize = text)
             }
             Row(Modifier.fillMaxWidth()) {
-                for (label in listOf("L", "M", "M", "J", "V", "S", "D")) {
+                for (label in weekInitials()) {
                     Box(Modifier.weight(1f).height(cell * 0.8f), contentAlignment = Alignment.Center) {
                         Text(label, color = colors.secondary, fontSize = (cell * 0.34f).asSp(), fontWeight = FontWeight.SemiBold)
                     }

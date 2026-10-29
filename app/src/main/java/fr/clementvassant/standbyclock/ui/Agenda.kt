@@ -18,6 +18,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -25,19 +27,18 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import fr.clementvassant.standbyclock.AgendaLines
+import fr.clementvassant.standbyclock.AgendaTime
 import fr.clementvassant.standbyclock.CalendarEvent
 import fr.clementvassant.standbyclock.DAYS_PER_WEEK
 import fr.clementvassant.standbyclock.MAX_AGENDA_LINES
+import fr.clementvassant.standbyclock.R
 import fr.clementvassant.standbyclock.agendaTime
 import fr.clementvassant.standbyclock.isHappeningNow
-import fr.clementvassant.standbyclock.moreEventsLabel
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import java.time.temporal.WeekFields
-import java.util.Locale
 
 /**
  * Hauteur du bloc en lignes de liste : en-tête, semaine (libellés + jours), séparateur, puis
@@ -77,7 +78,12 @@ fun WeekAgenda(now: ZonedDateTime, lines: AgendaLines, colors: ClockColors, modi
             }
             if (lines.more > 0) {
                 Row(Modifier.fillMaxWidth().height(line), verticalAlignment = Alignment.CenterVertically) {
-                    Text(moreEventsLabel(lines.more), color = colors.secondary, fontSize = text, maxLines = 1)
+                    Text(
+                        pluralStringResource(R.plurals.agenda_more_events, lines.more, lines.more),
+                        color = colors.secondary,
+                        fontSize = text,
+                        maxLines = 1
+                    )
                 }
             }
         }
@@ -92,22 +98,27 @@ private fun WeekHeader(now: ZonedDateTime, colors: ClockColors, line: Dp) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            now.format(DateTimeFormatter.ofPattern("MMMM", Locale.FRENCH)).uppercase(),
+            now.format(monthFormat()).uppercase(),
             color = colors.accent,
             fontSize = (line * 0.5f).asSp(),
             fontWeight = FontWeight.SemiBold
         )
-        Text("semaine ${isoWeekNumber(now.toLocalDate())}", color = colors.secondary, fontSize = (line * 0.38f).asSp())
+        Text(
+            stringResource(R.string.agenda_week_number, isoWeekNumber(now.toLocalDate())),
+            color = colors.secondary,
+            fontSize = (line * 0.38f).asSp()
+        )
     }
 }
 
 @Composable
 private fun WeekRow(today: LocalDate, colors: ClockColors, line: Dp) {
+    val initials = weekInitials()
     Row(Modifier.fillMaxWidth().height(line * 1.8f)) {
         for ((index, day) in weekOf(today).withIndex()) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(Modifier.height(line * 0.7f), contentAlignment = Alignment.Center) {
-                    Text(WEEK_LABELS[index], color = colors.secondary, fontSize = (line * 0.34f).asSp(), fontWeight = FontWeight.SemiBold)
+                    Text(initials[index], color = colors.secondary, fontSize = (line * 0.34f).asSp(), fontWeight = FontWeight.SemiBold)
                 }
                 Box(Modifier.size(line), contentAlignment = Alignment.Center) {
                     val isToday = day == today
@@ -133,16 +144,17 @@ private fun WeekRow(today: LocalDate, colors: ClockColors, line: Dp) {
 @Composable
 private fun AgendaLine(event: CalendarEvent, now: ZonedDateTime, colors: ClockColors, line: Dp, text: TextUnit) {
     val current = isHappeningNow(event, now)
+    val untitled = stringResource(R.string.agenda_untitled)
     Row(Modifier.fillMaxWidth().height(line), verticalAlignment = Alignment.CenterVertically) {
         Text(
-            agendaTime(event, now),
+            agendaTimeLabel(agendaTime(event, now)),
             Modifier.width(line * AGENDA_TIME_WIDTH),
             color = if (current) colors.accent else colors.secondary,
             fontSize = text,
             maxLines = 1
         )
         Text(
-            event.title.ifBlank { "(Sans titre)" },
+            event.title.ifBlank { untitled },
             color = colors.primary,
             fontSize = text,
             fontWeight = if (current) FontWeight.SemiBold else FontWeight.Medium,
@@ -152,4 +164,10 @@ private fun AgendaLine(event: CalendarEvent, now: ZonedDateTime, colors: ClockCo
     }
 }
 
-private val WEEK_LABELS = listOf("L", "M", "M", "J", "V", "S", "D")
+@Composable
+private fun agendaTimeLabel(time: AgendaTime): String = when (time) {
+    AgendaTime.AllDay -> stringResource(R.string.agenda_all_day)
+    is AgendaTime.StartsAt -> time.time
+    is AgendaTime.EndsAt -> stringResource(R.string.agenda_ends_at, time.time)
+    AgendaTime.Ongoing -> stringResource(R.string.agenda_ongoing)
+}

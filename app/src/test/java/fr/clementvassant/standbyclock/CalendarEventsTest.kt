@@ -104,12 +104,12 @@ class CalendarEventsTest {
 
     @Test
     fun `event time reads all day, end time when ongoing, or start time`() {
-        assertEquals("Journée", agendaTime(allDay("Anniversaire de Léa", today), now))
-        assertEquals("→ 15:00", agendaTime(timed("Revue de sprint", "14:00", "15:00"), now))
+        assertEquals(AgendaTime.AllDay, agendaTime(allDay("Anniversaire de Léa", today), now))
+        assertEquals(AgendaTime.EndsAt("15:00"), agendaTime(timed("Revue de sprint", "14:00", "15:00"), now))
         val nightShift = timed("Astreinte", "13:00", "23:00").copy(end = millis(today.plusDays(1), "08:00"))
-        assertEquals("En cours", agendaTime(nightShift, now))
-        assertEquals("17:30", agendaTime(timed("Dentiste", "17:30", "18:00"), now))
-        assertEquals("09:05", agendaTime(timed("Café", "09:05", "09:30"), now.withHour(8)))
+        assertEquals(AgendaTime.Ongoing, agendaTime(nightShift, now))
+        assertEquals(AgendaTime.StartsAt("17:30"), agendaTime(timed("Dentiste", "17:30", "18:00"), now))
+        assertEquals(AgendaTime.StartsAt("09:05"), agendaTime(timed("Café", "09:05", "09:30"), now.withHour(8)))
     }
 
     @Test
@@ -140,11 +140,5 @@ class CalendarEventsTest {
         assertTrue(isHappeningNow(timed("Revue de sprint", "14:00", "15:00"), now))
         assertTrue(isHappeningNow(allDay("Anniversaire de Léa", today), now))
         assertFalse(isHappeningNow(timed("Dentiste", "17:30", "18:00"), now))
-    }
-
-    @Test
-    fun `remaining count agrees with its number`() {
-        assertEquals("+1 autre", moreEventsLabel(1))
-        assertEquals("+3 autres", moreEventsLabel(3))
     }
 }
