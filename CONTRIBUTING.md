@@ -22,7 +22,7 @@ scripts/check.sh --all # idem + tests d'interface, parcours e2e, et parcours cou
 |---|---|---|
 | Lint | `ktlintCheck detekt lintDebug` | style Kotlin (ktlint + règles Compose), code smells (detekt + règles Compose), erreurs Android (Lint, avertissements bloquants) |
 | Tests unitaires | `testDebugUnitTest` | logique pure : plage de nuit, calendrier, anti-marquage, musique… |
-| Captures de référence | `verifyRoborazziDebug` | l'écran de l'horloge (3 styles, jour/nuit, paysage/portrait) rendu sur la JVM et comparé aux images de `app/src/test/screenshots/` ; en cas d'écart, l'artefact `screenshot-diffs` montre la différence |
+| Captures de référence | `verifyRoborazziDebug` | l'écran de l'horloge (3 styles, jour/nuit, paysage/portrait, musique, sans calendrier, événements du jour, 12 h, *Toujours paysage*) et celui des réglages, rendus sur la JVM et comparé aux images de `app/src/test/screenshots/` ; en cas d'écart, l'artefact `screenshot-diffs` montre la différence |
 | Tests d'interface et parcours e2e | `scripts/connected-tests.sh` | tests Compose à heure fixe, puis parcours de bout en bout UI Automator (lanceur, réglages, autorisation de l'agenda, orientation Automatique et Toujours paysage, écran de veille) sur un émulateur API 34 ; puis le module `release-smoke` ouvre l'horloge, les réglages et l'écran de veille sur l'APK release passé par R8 (tests dans leur propre processus, qui pilotent l'app par l'écran seulement) ; captures dans l'artefact `e2e-captures` |
 | APK debug et release | `assembleDebug assembleRelease` | l'app compile dans les deux variantes ; la release passe par R8 (code et ressources inutilisés retirés, règles dans `app/proguard-rules.pro`) avec le profil de référence `app/src/main/baseline-prof.txt` ; l'APK debug est téléchargeable dans les artefacts du run |
 | `ci-ok` | | vert seulement si tous les autres le sont ; c'est lui que la protection de `main` exige |
@@ -35,7 +35,7 @@ Un changement visible modifie les images de `app/src/test/screenshots/` : on les
 
 Les parcours de `app/src/androidTest/java/fr/clementvassant/standbyclock/e2e/` pilotent l'app comme un utilisateur, en [UI Automator](https://developer.android.com/training/testing/ui-automator) : ils voient le lanceur, la vraie boîte de permission et l'écran de veille système. Ils créent leurs propres données (agenda local supprimé à la fin), forcent le mode Jour et enregistrent une capture par étape dans `/sdcard/Download/standbyclock-e2e/`. L'agent `qa` les rejoue sur l'émulateur pliable, plié et déplié, avant tout scénario manuel.
 
-Dependabot propose chaque semaine les mises à jour Gradle et chaque mois celles des actions GitHub ; elles passent par la même CI.
+Dependabot propose chaque semaine les mises à jour Gradle et chaque mois celles des actions GitHub ; elles passent par la même CI. Les versions des plugins et bibliothèques de tous les modules sont dans le catalogue `gradle/libs.versions.toml` : c'est là qu'on en ajoute ou qu'on en monte une, pas dans les `build.gradle.kts`.
 
 ## Titres de PR et releases
 
@@ -76,8 +76,12 @@ Puis dans **Settings > Secrets and variables > Actions** du dépôt, créer `REL
 - Une fonction `@Composable` fait une chose ; au-delà d'une soixantaine de lignes, la découper.
 - La logique (calculs de dates, de tailles, de jour/nuit) vit dans des fonctions pures testées en JVM, pas dans l'UI.
 - Les commentaires expliquent le *pourquoi* (contrainte Android, choix anti-marquage), pas le *quoi*.
+- Aucun texte visible en dur dans le code : il va dans `app/src/main/res/values/strings.xml` (prêt à traduire). `VisibleTextsTest` vérifie qu'aucun ne parle d'un modèle de téléphone.
+- Les heures passent par `TimeFormat.kt`, qui suit le format 12 h ou 24 h du téléphone ; un test qui attend une écriture précise la fixe avec `SystemHourFormatRule`.
 - Le seuil d'un outil ne se contourne pas avec `@Suppress` sans un commentaire qui dit pourquoi.
 
 ## Avec Claude Code
 
-`CLAUDE.md` reprend ces règles pour Claude, et `.claude/agents/` définit des agents spécialisés : `code-reviewer` (relecture du diff), `test-writer` (tests), `ci-doctor` (CI rouge), `compose-ui` (vues Compose) et `qa` (suite e2e et scénarios sur l'émulateur du Mac).
+`CLAUDE.md` reprend ces règles pour Claude, et `.claude/agents/` définit des agents spécialisés : `code-reviewer` (relecture du diff), `test-writer` (tests), `ci-doctor` (CI rouge), `compose-ui` (vues Compose), `designer` (questions et maquettes avant tout changement d'interface), `doc-writer` (README et CONTRIBUTING à jour dans chaque PR), `qa` (suite e2e et scénarios sur l'émulateur du Mac) et `releaser` (publication d'une release).
+
+Chaque PR coche la case « Doc » de son modèle : README ou CONTRIBUTING mis à jour, ou une phrase qui dit pourquoi rien ne change.
