@@ -23,6 +23,7 @@ import fr.clementvassant.standbyclock.ui.TAG_SETTINGS
 import fr.clementvassant.standbyclock.ui.clockTag
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -73,7 +74,8 @@ class LaunchJourneyTest {
         E2e.open(shortcutIntent(THEME_NIGHT))
         clockScreenIn(STATE_NIGHT)
         // Référence pour l'écran de veille : l'app impose la luminosité minimale la nuit.
-        assertEquals(WindowBrightness.diagnostics(), NIGHT_BRIGHTNESS, WindowBrightness.waitFor { it == NIGHT_BRIGHTNESS })
+        val applied = WindowBrightness.waitFor { requested, applied -> requested == NIGHT_BRIGHTNESS && applied }
+        assertTrue("Luminosité minimale non appliquée la nuit\n" + WindowBrightness.diagnostics(), applied)
         capture("raccourci-horloge-nuit")
 
         // Un toucher inverse jour et nuit jusqu'à la prochaine bascule.

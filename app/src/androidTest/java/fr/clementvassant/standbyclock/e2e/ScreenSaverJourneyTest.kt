@@ -23,7 +23,6 @@ import fr.clementvassant.standbyclock.ui.fullDatePattern
 import java.time.LocalDate
 import java.util.Locale
 import org.junit.After
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -92,8 +91,8 @@ class ScreenSaverJourneyTest {
         prefs.themeMode = ThemeMode.NIGHT
         screenSaver.start()
         clockScreenIn(STATE_NIGHT)
-        val override = WindowBrightness.waitFor { it == NIGHT_BRIGHTNESS }
-        assertEquals(WindowBrightness.diagnostics(), NIGHT_BRIGHTNESS, override)
+        val applied = WindowBrightness.waitFor { requested, applied -> requested == NIGHT_BRIGHTNESS && applied }
+        assertTrue("Luminosité minimale non appliquée la nuit\n" + WindowBrightness.diagnostics(), applied)
         capture("ecran-de-veille-nuit")
     }
 
@@ -101,8 +100,9 @@ class ScreenSaverJourneyTest {
     fun dayLeavesTheBrightnessToTheSystem() = uiAutomator {
         screenSaver.start()
         clockScreenIn(STATE_DAY)
-        // Rien d'imposé : Android affiche NaN (aucune valeur de fenêtre transmise au gestionnaire d'énergie).
-        assertTrue("Luminosité imposée le jour", WindowBrightness.waitFor { it.isNaN() }.isNaN())
+        // Rien d'imposé : le niveau atténué du système s'applique.
+        val untouched = WindowBrightness.waitFor { requested, applied -> requested.isNaN() && !applied }
+        assertTrue("Luminosité imposée le jour\n" + WindowBrightness.diagnostics(), untouched)
     }
 
     /** La ligne de date sous les chiffres de l'horloge numérique (« Jeudi 22 octobre »), formatée comme dans `Clocks.kt`. */
