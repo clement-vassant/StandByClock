@@ -17,12 +17,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** Luminosité de la fenêtre la nuit : le minimum, pour ne pas éblouir. */
-private const val NIGHT_BRIGHTNESS = 0.01f
-
-/** Plafond de luminosité le jour : un écran OLED s'use moins vite à faible luminosité. */
-private const val DAY_MAX_BRIGHTNESS = 0.35f
-
 /** Horloge plein écran, écran maintenu allumé ; s'éteint seule après le délai réglé. */
 class MainActivity : ComponentActivity() {
 
@@ -52,7 +46,7 @@ class MainActivity : ComponentActivity() {
             StandByScreen(
                 prefs = prefs,
                 forcedTheme = forcedTheme.value,
-                onNightModeChange = ::applyBrightness,
+                onNightModeChange = { night -> window.applyClockBrightness(night, ClockSurface.APP) },
                 onOpenSettings = { startActivity(Intent(this, SettingsActivity::class.java)) }
             )
         }
@@ -96,11 +90,4 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun themeFromLaunch(intent: Intent): ThemeMode? = themeFromExtra(intent.getStringExtra(EXTRA_THEME))
-
-    /** Luminosité de la fenêtre : minimale la nuit, plafonnée à 35 % le jour (usure OLED). */
-    private fun applyBrightness(night: Boolean) {
-        window.attributes = window.attributes.apply {
-            screenBrightness = if (night) NIGHT_BRIGHTNESS else DAY_MAX_BRIGHTNESS
-        }
-    }
 }

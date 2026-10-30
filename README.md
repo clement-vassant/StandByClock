@@ -110,7 +110,7 @@ Les fabricants d'écrans OLED (Samsung notamment) conseillent d'éviter les imag
 - **Orbite anti-marquage** : tout le contenu se déplace chaque minute sur une spirale lente jusqu'à ±20 dp, sans jamais rester deux minutes au même endroit.
 - **Inversion des côtés chaque heure** : heures paires, horloge à gauche et calendrier à droite (en portrait : horloge en haut, calendrier dessous) ; heures impaires, l'inverse.
 - **Moins de pixels allumés** : pas de blanc pur (gris clair `#BDBDBD` le jour), jour du calendrier entouré d'un anneau fin plutôt que d'un disque plein, mode nuit rouge sombre.
-- **Luminosité plafonnée** : 35 % le jour, minimale la nuit (dans l'app) ; l'écran de veille demande un écran atténué.
+- **Luminosité plafonnée** : 35 % le jour, minimale la nuit dans l'app ; l'écran de veille garde le jour le niveau atténué du système et passe lui aussi au minimum la nuit.
 - **Arrêt automatique** : réglage *Éteindre après* (1 h, 2 h, 4 h, 8 h, Jamais ; 2 h par défaut). Le délai écoulé, l'horloge se ferme et l'écran peut s'éteindre normalement.
 - **Économie d'énergie** : la nuit, ni trotteuse ni deux-points clignotants, et l'affichage n'est redessiné qu'une fois par minute (1 image par minute au lieu de 60, mesuré sur l'appareil de test). L'app demande aussi le taux de rafraîchissement le plus bas de l'écran (souvent 60 Hz au lieu de 120).
 

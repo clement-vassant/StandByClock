@@ -12,6 +12,7 @@ import fr.clementvassant.standbyclock.ClockPrefs
 import fr.clementvassant.standbyclock.ClockStyle
 import fr.clementvassant.standbyclock.EXTRA_THEME
 import fr.clementvassant.standbyclock.MainActivity
+import fr.clementvassant.standbyclock.NIGHT_BRIGHTNESS
 import fr.clementvassant.standbyclock.R
 import fr.clementvassant.standbyclock.SettingsActivity
 import fr.clementvassant.standbyclock.ThemeMode
@@ -22,6 +23,7 @@ import fr.clementvassant.standbyclock.ui.TAG_SETTINGS
 import fr.clementvassant.standbyclock.ui.clockTag
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -71,6 +73,9 @@ class LaunchJourneyTest {
     fun nightAndDayShortcutsForceTheirMode() = uiAutomator {
         E2e.open(shortcutIntent(THEME_NIGHT))
         clockScreenIn(STATE_NIGHT)
+        // Référence pour l'écran de veille : l'app impose la luminosité minimale la nuit.
+        val applied = WindowBrightness.waitFor { requested, applied -> requested == NIGHT_BRIGHTNESS && applied }
+        assertTrue("Luminosité minimale non appliquée la nuit\n" + WindowBrightness.diagnostics(), applied)
         capture("raccourci-horloge-nuit")
 
         // Un toucher inverse jour et nuit jusqu'à la prochaine bascule.

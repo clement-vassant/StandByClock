@@ -9,8 +9,12 @@ import androidx.test.uiautomator.Until
 import androidx.test.uiautomator.uiAutomator
 import fr.clementvassant.standbyclock.ClockPrefs
 import fr.clementvassant.standbyclock.ClockStyle
+import fr.clementvassant.standbyclock.NIGHT_BRIGHTNESS
 import fr.clementvassant.standbyclock.OrientationMode
 import fr.clementvassant.standbyclock.R
+import fr.clementvassant.standbyclock.ThemeMode
+import fr.clementvassant.standbyclock.ui.STATE_DAY
+import fr.clementvassant.standbyclock.ui.STATE_NIGHT
 import fr.clementvassant.standbyclock.ui.TAG_SCREEN
 import fr.clementvassant.standbyclock.ui.clockTag
 import fr.clementvassant.standbyclock.ui.dateFormatter
@@ -28,6 +32,7 @@ import org.junit.runner.RunWith
  * L'écran de veille, tel qu'Android le lance pendant la charge : l'horloge et le calendrier s'affichent en entier,
  * sans se chevaucher. Sur un téléphone, Android garde l'écran de veille en portrait : avec « Toujours paysage »,
  * c'est l'app qui couche l'horloge, ce que montre la ligne de date, plus haute que large une fois tournée.
+ * La nuit, l'écran de veille impose la luminosité minimale ; le jour, il laisse le niveau atténué du système.
  */
 @RunWith(AndroidJUnit4::class)
 class ScreenSaverJourneyTest {
@@ -79,6 +84,25 @@ class ScreenSaverJourneyTest {
         clockScreen()
         pressBack()
         assertTrue("L'écran de veille est resté affiché", device.wait(Until.gone(By.res(TAG_SCREEN)), E2e.SCREEN_TIMEOUT_MS))
+    }
+
+    @Test
+    fun nightAsksForTheLowestBrightness() = uiAutomator {
+        prefs.themeMode = ThemeMode.NIGHT
+        screenSaver.start()
+        clockScreenIn(STATE_NIGHT)
+        val applied = WindowBrightness.waitFor { requested, applied -> requested == NIGHT_BRIGHTNESS && applied }
+        assertTrue("Luminosité minimale non appliquée la nuit\n" + WindowBrightness.diagnostics(), applied)
+        capture("ecran-de-veille-nuit")
+    }
+
+    @Test
+    fun dayLeavesTheBrightnessToTheSystem() = uiAutomator {
+        screenSaver.start()
+        clockScreenIn(STATE_DAY)
+        // Rien d'imposé : le niveau atténué du système s'applique.
+        val untouched = WindowBrightness.waitFor { requested, applied -> requested.isNaN() && !applied }
+        assertTrue("Luminosité imposée le jour\n" + WindowBrightness.diagnostics(), untouched)
     }
 
     /** La ligne de date sous les chiffres de l'horloge numérique (« Jeudi 22 octobre »), formatée comme dans `Clocks.kt`. */

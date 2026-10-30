@@ -53,7 +53,7 @@ class StandByDreamService :
         super.onAttachedToWindow()
         isFullscreen = true
         isInteractive = true // toucher : jour/nuit, appui long : calendrier, balayage : style
-        isScreenBright = false
+        isScreenBright = false // le jour, niveau atténué du système ; la nuit, la fenêtre impose le minimum
 
         val prefs = ClockPrefs(this)
         val view = ComposeView(this).apply {
@@ -66,7 +66,7 @@ class StandByDreamService :
                 StandByScreen(
                     prefs = prefs,
                     forcedTheme = null,
-                    onNightModeChange = {},
+                    onNightModeChange = ::applyBrightness,
                     onOpenSettings = null,
                     modifier = orientation
                 )
@@ -74,6 +74,15 @@ class StandByDreamService :
         }
         setContentView(view)
         window.preferLowestRefreshRate()
+    }
+
+    /**
+     * Luminosité minimale la nuit. Contrairement à une Activity, un DreamService ne transmet pas au système
+     * les changements d'attributs de sa fenêtre : sans `updateViewLayout`, la valeur reste ignorée.
+     */
+    private fun applyBrightness(night: Boolean) {
+        window.applyClockBrightness(night, ClockSurface.SCREEN_SAVER)
+        window.windowManager.updateViewLayout(window.decorView, window.attributes)
     }
 
     override fun onDreamingStarted() {
