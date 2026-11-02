@@ -10,7 +10,7 @@ ktlintPlugin = "14.2.0"
 # Version du moteur ktlint, la même que celle visée par les règles Compose (io.nlopez.compose.rules:ktlint).
 ktlint = "1.8.0"
 detekt = "1.23.8"
-roborazzi = "1.75.0"
+roborazzi = "1.77.0"
 composeRules = "0.6.8"
 composeBom = "2026.09.00"
 coreKtx = "1.19.1"
