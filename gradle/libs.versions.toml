@@ -2,7 +2,7 @@
 # Dependabot lit ce fichier et y monte les versions (groupes dans .github/dependabot.yml).
 
 [versions]
-agp = "9.4.1"
+agp = "9.5.0"
 kotlin = "2.4.21"
 # detekt 1.23 est compilé avec Kotlin 2.0.21 : il doit tourner avec cette version, pas celle du projet.
 detektKotlin = "2.0.21"
