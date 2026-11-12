@@ -42,7 +42,7 @@ jobs:
       # feat = mineure, fix/perf/deps/revert = correctif, « ! » ou BREAKING CHANGE = majeure, autre = correctif.
       - name: Calculer la version et les notes
         id: version
-        uses: mathieudutour/github-tag-action@v6.2
+        uses: mathieudutour/github-tag-action@v7
         with:
           github_token: ${{ github.token }}
           dry_run: true
