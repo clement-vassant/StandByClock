@@ -1,5 +1,6 @@
 package fr.clementvassant.standbyclock
 
+import android.os.SystemClock
 import android.service.dreams.DreamService
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
@@ -52,7 +53,7 @@ class StandByDreamService :
         super.onAttachedToWindow()
         isFullscreen = true
         isInteractive = true // toucher : jour/nuit, appui long : calendrier, balayage : style
-        isScreenBright = false
+        isScreenBright = false // le jour, niveau atténué du système ; la nuit, la fenêtre impose le minimum
 
         val prefs = ClockPrefs(this)
         val view = ComposeView(this).apply {
@@ -65,7 +66,7 @@ class StandByDreamService :
                 StandByScreen(
                     prefs = prefs,
                     forcedTheme = null,
-                    onNightModeChange = {},
+                    onNightModeChange = ::applyBrightness,
                     onOpenSettings = null,
                     modifier = orientation
                 )
@@ -75,17 +76,25 @@ class StandByDreamService :
         window.preferLowestRefreshRate()
     }
 
+    /**
+     * Luminosité minimale la nuit. Contrairement à une Activity, un DreamService ne transmet pas au système
+     * les changements d'attributs de sa fenêtre : sans `updateViewLayout`, la valeur reste ignorée.
+     */
+    private fun applyBrightness(night: Boolean) {
+        window.applyClockBrightness(night, ClockSurface.SCREEN_SAVER)
+        window.windowManager.updateViewLayout(window.decorView, window.attributes)
+    }
+
     override fun onDreamingStarted() {
         super.onDreamingStarted()
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
         // Extinction automatique : pas d'image fixe pendant des heures.
-        val minutes = ClockPrefs(this).autoOffMinutes
-        if (minutes > 0) {
-            autoOff = lifecycleScope.launch {
-                delay(minutes * MILLIS_PER_MINUTE)
-                finish()
-            }
+        val now = SystemClock.elapsedRealtime()
+        val remaining = autoOffDelayMillis(launchedAt = now, ClockPrefs(this).autoOffMinutes, now) ?: return
+        autoOff = lifecycleScope.launch {
+            delay(remaining)
+            finish()
         }
     }
 

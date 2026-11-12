@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -32,14 +33,20 @@ import fr.clementvassant.standbyclock.AgendaLines
 import fr.clementvassant.standbyclock.CalendarEvent
 import fr.clementvassant.standbyclock.ClockPrefs
 import fr.clementvassant.standbyclock.ClockStyle
+import fr.clementvassant.standbyclock.DeviceStatus
+import fr.clementvassant.standbyclock.HourFormat
 import fr.clementvassant.standbyclock.MILLIS_PER_MINUTE
 import fr.clementvassant.standbyclock.MILLIS_PER_SECOND
 import fr.clementvassant.standbyclock.NowPlaying
 import fr.clementvassant.standbyclock.SECONDS_PER_MINUTE
+import fr.clementvassant.standbyclock.StatusLine
 import fr.clementvassant.standbyclock.ThemeMode
 import fr.clementvassant.standbyclock.agendaLines
 import fr.clementvassant.standbyclock.rememberCalendarEvents
+import fr.clementvassant.standbyclock.rememberDeviceStatus
 import fr.clementvassant.standbyclock.rememberNowPlaying
+import fr.clementvassant.standbyclock.statusLine
+import fr.clementvassant.standbyclock.systemHourFormat
 import fr.clementvassant.standbyclock.todayAgenda
 import java.time.Clock
 import java.time.LocalDate
@@ -72,6 +79,7 @@ private const val ORBIT_MAX_RADIUS_DP = 20f
  * @param clock heure utilisée (injectable pour les tests).
  * @param nowPlayingSource musique en cours (injectable pour les tests).
  * @param eventsSource événements de l'agenda autour d'un jour (injectable pour les tests).
+ * @param deviceStatusSource batterie et prochain réveil (injectable pour les tests).
  */
 @Composable
 fun StandByScreen(
@@ -84,7 +92,8 @@ fun StandByScreen(
     nowPlayingSource: @Composable (enabled: Boolean) -> NowPlaying? = { rememberNowPlaying(it).value },
     eventsSource: @Composable (enabled: Boolean, day: LocalDate) -> List<CalendarEvent> = { enabled, day ->
         rememberCalendarEvents(enabled, day).value
-    }
+    },
+    deviceStatusSource: @Composable () -> DeviceStatus = { rememberDeviceStatus().value }
 ) {
     // La nuit, rien n'affiche les secondes : on ne se réveille qu'une fois par minute (économie d'énergie).
     var minuteTicks by remember { mutableStateOf(false) }
@@ -94,6 +103,8 @@ fun StandByScreen(
     val themeMode = remember(forcedTheme, resumes) { forcedTheme ?: prefs.themeMode }
     var showCalendar by remember(resumes) { mutableStateOf(prefs.showCalendar) }
     val showMedia = remember(resumes) { prefs.showMedia }
+    val context = LocalContext.current
+    val hourFormat = remember(resumes) { systemHourFormat(context) }
     // Relancé à chaque reprise : l'accès aux notifications a pu être accordé entre-temps.
     val nowPlaying = key(resumes) { nowPlayingSource(showMedia) }
 
@@ -121,9 +132,14 @@ fun StandByScreen(
 
     val pager = rememberStylePager(prefs, resumes)
 
+    val device = deviceStatusSource()
+    val status = remember(device, night, epochMinute, hourFormat) {
+        statusLine(device.battery, device.nextAlarmMillis, now, night, hourFormat)
+    }
+
     // Musique en lecture (ou en pause depuis peu) : barre sous l'horloge, ou tout le panneau si le calendrier est masqué.
     val media = nowPlaying?.takeIf { it.isRecent(clock.millis()) }
-    val state = ScreenState(now, if (night) NightColors else DayColors, night, showCalendar, media, agenda)
+    val state = ScreenState(now, if (night) NightColors else DayColors, night, showCalendar, media, agenda, hourFormat, status)
     Box(
         modifier
             .fillMaxSize()
@@ -158,7 +174,11 @@ internal class ScreenState(
     val showCalendar: Boolean,
     val media: NowPlaying?,
     /** Événements du jour restants : la semaine et leur liste remplacent alors le mois. */
-    val agenda: AgendaLines = NO_AGENDA
+    val agenda: AgendaLines = NO_AGENDA,
+    /** 12 h ou 24 h, comme le téléphone. */
+    val hourFormat: HourFormat = HourFormat.H24,
+    /** Batterie et prochain réveil, à côté de la date. */
+    val status: StatusLine = StatusLine()
 ) {
     val hasSidePane get() = media != null || showCalendar
     val showsAgenda get() = showCalendar && agenda.count > 0

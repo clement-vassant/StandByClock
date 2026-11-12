@@ -81,7 +81,7 @@ class SettingsScreenTest {
         calendarAccess = false
         showSettings()
         rule.onNodeWithTag(calendarChoiceTag(work.id)).assertDoesNotExist()
-        rule.onNodeWithText("Autoriser l'accès à l'agenda").performScrollTo().performClick()
+        rule.onNodeWithText(context.getString(R.string.settings_calendar_access_button)).performScrollTo().performClick()
         assertEquals(1, accessRequests)
     }
 
@@ -97,7 +97,7 @@ class SettingsScreenTest {
     fun calendarSwitchSaysWhatItDoes() {
         showSettings()
         // Le libellé dit « afficher », pas « à droite » : le calendrier change de côté chaque heure.
-        rule.onNodeWithText("Afficher le calendrier").assertExists()
+        rule.onNodeWithText(context.getString(R.string.settings_show_calendar)).assertExists()
         rule.onNodeWithText("à droite", substring = true).assertDoesNotExist()
         rule.onNodeWithTag(TAG_CALENDAR_SWITCH).assertIsOn()
     }
@@ -106,16 +106,16 @@ class SettingsScreenTest {
     fun orientationCanBeForcedToLandscape() {
         showSettings()
         assertEquals(OrientationMode.AUTO, prefs.orientation)
-        rule.onNodeWithText("Toujours paysage").performScrollTo().performClick()
+        rule.onNodeWithText(context.getString(R.string.orientation_landscape)).performScrollTo().performClick()
         assertEquals(OrientationMode.LANDSCAPE, prefs.orientation)
-        rule.onNodeWithText("L'app reste en paysage", substring = true).assertExists()
+        rule.onNodeWithText(context.getString(R.string.settings_orientation_landscape_help)).assertExists()
     }
 
     @Test
     fun orientationSettingCoversTheAppToo() {
         showSettings()
-        rule.onNodeWithText("Orientation").performScrollTo().assertIsDisplayed()
-        rule.onNodeWithText("Suit la rotation du téléphone", substring = true).assertExists()
+        rule.onNodeWithText(context.getString(R.string.settings_orientation)).performScrollTo().assertIsDisplayed()
+        rule.onNodeWithText(context.getString(R.string.settings_orientation_auto_help)).assertExists()
     }
 
     @Test

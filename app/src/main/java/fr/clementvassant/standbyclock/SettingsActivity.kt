@@ -7,6 +7,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.text.format.DateFormat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -39,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -82,30 +84,29 @@ class SettingsActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val prefs = ClockPrefs(this)
         setContent {
-            MaterialTheme(colorScheme = darkColorScheme(primary = DayColors.accent, background = Color.Black, surface = Color.Black)) {
-                Surface(Modifier.fillMaxSize()) {
-                    SettingsScreen(
-                        prefs = prefs,
-                        pickTime = ::pickTime,
-                        onLaunch = { startActivity(Intent(this, MainActivity::class.java)) },
-                        onOpenScreenSaver = ::openScreenSaverSettings,
-                        hasMediaAccess = { MediaListenerService.isGranted(this) },
-                        onOpenNotificationAccess = { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) },
-                        calendarSource = CalendarSource(
-                            hasAccess = { DeviceCalendar.hasAccess(this) },
-                            requestAccess = { requestCalendarAccess(prefs) },
-                            calendars = { DeviceCalendar.calendars(this) }
-                        )
+            SettingsTheme {
+                SettingsScreen(
+                    prefs = prefs,
+                    pickTime = ::pickTime,
+                    onLaunch = { startActivity(Intent(this, MainActivity::class.java)) },
+                    onOpenScreenSaver = ::openScreenSaverSettings,
+                    hasMediaAccess = { MediaListenerService.isGranted(this) },
+                    onOpenNotificationAccess = { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) },
+                    calendarSource = CalendarSource(
+                        hasAccess = { DeviceCalendar.hasAccess(this) },
+                        requestAccess = { requestCalendarAccess(prefs) },
+                        calendars = { DeviceCalendar.calendars(this) }
                     )
-                }
+                )
             }
         }
     }
 
+    // Même écriture que le reste du téléphone : cadran 12 h avec AM/PM, ou 24 h.
     private fun pickTime(initial: Int, onPicked: (Int) -> Unit) {
         TimePickerDialog(this, { _, h, m ->
             onPicked(h * MINUTES_PER_HOUR + m)
-        }, initial / MINUTES_PER_HOUR, initial % MINUTES_PER_HOUR, true).show()
+        }, initial / MINUTES_PER_HOUR, initial % MINUTES_PER_HOUR, DateFormat.is24HourFormat(this)).show()
     }
 
     private fun openScreenSaverSettings() {
@@ -114,6 +115,14 @@ class SettingsActivity : ComponentActivity() {
         } catch (_: ActivityNotFoundException) {
             startActivity(Intent(Settings.ACTION_DISPLAY_SETTINGS))
         }
+    }
+}
+
+/** Thème sombre des réglages, partagé avec leurs captures de référence (SettingsScreenshotTest). */
+@Composable
+internal fun SettingsTheme(content: @Composable () -> Unit) {
+    MaterialTheme(colorScheme = darkColorScheme(primary = DayColors.accent, background = Color.Black, surface = Color.Black)) {
+        Surface(Modifier.fillMaxSize(), content = content)
     }
 }
 
@@ -135,11 +144,14 @@ internal fun SettingsScreen(
     var autoOff by remember { mutableIntStateOf(prefs.autoOffMinutes) }
     var media by remember { mutableStateOf(prefs.showMedia) }
     var orientation by remember { mutableStateOf(prefs.orientation) }
-    // Revérifié au retour des réglages Android.
+    // Revérifiés au retour des réglages Android.
     var mediaAccess by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    var hourFormat by remember { mutableStateOf(systemHourFormat(context)) }
     val currentHasMediaAccess by rememberUpdatedState(hasMediaAccess)
     LifecycleResumeEffect(Unit) {
         mediaAccess = currentHasMediaAccess()
+        hourFormat = systemHourFormat(context)
         onPauseOrDispose { }
     }
 
@@ -153,11 +165,15 @@ internal fun SettingsScreen(
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        Text("StandBy Clock", style = MaterialTheme.typography.headlineMedium)
+        Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineMedium)
 
-        Section("Style d'horloge") {
+        Section(stringResource(R.string.settings_style)) {
             Choices(
-                options = listOf(ClockStyle.DIGITAL to "Digital", ClockStyle.ANALOG to "Analogique", ClockStyle.MINIMAL to "Minimal"),
+                options = listOf(
+                    ClockStyle.DIGITAL to stringResource(R.string.style_digital),
+                    ClockStyle.ANALOG to stringResource(R.string.style_analog),
+                    ClockStyle.MINIMAL to stringResource(R.string.style_minimal)
+                ),
                 selected = style
             ) {
                 style = it
@@ -168,9 +184,9 @@ internal fun SettingsScreen(
         // Le calendrier n'a pas de côté fixe : il échange sa place avec l'horloge chaque heure (anti-marquage OLED).
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Afficher le calendrier")
+                Text(stringResource(R.string.settings_show_calendar))
                 Text(
-                    "Il change de côté avec l'horloge chaque heure, pour protéger l'écran du marquage.",
+                    stringResource(R.string.settings_show_calendar_help),
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -181,7 +197,7 @@ internal fun SettingsScreen(
         }
 
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Afficher la musique en cours", Modifier.weight(1f))
+            Text(stringResource(R.string.settings_show_media), Modifier.weight(1f))
             Switch(checked = media, onCheckedChange = {
                 media = it
                 prefs.showMedia = it
@@ -189,17 +205,21 @@ internal fun SettingsScreen(
         }
         if (media && !mediaAccess) {
             Text(
-                "Pour lire et piloter la musique (Spotify...), StandBy Clock a besoin de l'accès aux notifications.",
+                stringResource(R.string.settings_media_access_help),
                 style = MaterialTheme.typography.bodyMedium
             )
-            OutlinedButton(onClick = onOpenNotificationAccess) { Text("Autoriser l'accès aux notifications") }
+            OutlinedButton(onClick = onOpenNotificationAccess) { Text(stringResource(R.string.settings_media_access_button)) }
         }
 
         EventsSettings(prefs, calendarSource)
 
-        Section("Jour ou nuit") {
+        Section(stringResource(R.string.settings_day_night)) {
             Choices(
-                options = listOf(ThemeMode.AUTO to "Auto", ThemeMode.DAY to "Jour", ThemeMode.NIGHT to "Nuit"),
+                options = listOf(
+                    ThemeMode.AUTO to stringResource(R.string.theme_auto),
+                    ThemeMode.DAY to stringResource(R.string.theme_day),
+                    ThemeMode.NIGHT to stringResource(R.string.theme_night)
+                ),
                 selected = theme
             ) {
                 theme = it
@@ -207,46 +227,51 @@ internal fun SettingsScreen(
             }
             if (theme == ThemeMode.AUTO) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Nuit de")
+                    Text(stringResource(R.string.settings_night_from))
                     OutlinedButton(onClick = {
                         pickTime(nightStart) {
                             nightStart = it
                             prefs.nightStart = it
                         }
-                    }) { Text(formatMinutes(nightStart)) }
-                    Text("à")
+                    }) { Text(scheduleTime(nightStart, hourFormat)) }
+                    Text(stringResource(R.string.settings_night_to))
                     OutlinedButton(onClick = {
                         pickTime(nightEnd) {
                             nightEnd = it
                             prefs.nightEnd = it
                         }
-                    }) { Text(formatMinutes(nightEnd)) }
+                    }) { Text(scheduleTime(nightEnd, hourFormat)) }
                 }
             }
         }
 
-        Section("Orientation") {
+        Section(stringResource(R.string.settings_orientation)) {
             Choices(
-                options = listOf(OrientationMode.AUTO to "Automatique", OrientationMode.LANDSCAPE to "Toujours paysage"),
+                options = listOf(
+                    OrientationMode.AUTO to stringResource(R.string.orientation_auto),
+                    OrientationMode.LANDSCAPE to stringResource(R.string.orientation_landscape)
+                ),
                 selected = orientation
             ) {
                 orientation = it
                 prefs.orientation = it
             }
             Text(
-                if (orientation == OrientationMode.AUTO) {
-                    "Suit la rotation du téléphone : côte à côte en paysage, horloge et calendrier l'un au-dessus de l'autre en portrait."
-                } else {
-                    "L'app reste en paysage. Si l'écran de veille s'affiche en portrait, l'horloge y est tournée " +
-                        "pour se lire téléphone couché, haut de l'écran vers la gauche."
-                },
+                stringResource(
+                    if (orientation == OrientationMode.AUTO) {
+                        R.string.settings_orientation_auto_help
+                    } else {
+                        R.string.settings_orientation_landscape_help
+                    }
+                ),
                 style = MaterialTheme.typography.bodySmall
             )
         }
 
-        Section("Éteindre après") {
+        Section(stringResource(R.string.settings_auto_off)) {
             Choices(
-                options = listOf(60 to "1 h", 120 to "2 h", 240 to "4 h", 480 to "8 h", 0 to "Jamais"),
+                options = AUTO_OFF_HOURS.map { it * MINUTES_PER_HOUR to stringResource(R.string.auto_off_hours, it) } +
+                    (0 to stringResource(R.string.auto_off_never)),
                 selected = autoOff
             ) {
                 autoOff = it
@@ -254,15 +279,18 @@ internal fun SettingsScreen(
             }
         }
 
-        Button(onClick = onLaunch, modifier = Modifier.fillMaxWidth()) { Text("Lancer l'horloge") }
+        Button(onClick = onLaunch, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.settings_launch)) }
 
-        Section("Lancement automatique") {
+        Section(stringResource(R.string.settings_auto_launch)) {
             Text(stringResource(R.string.help_screen_saver), style = MaterialTheme.typography.bodyMedium)
-            OutlinedButton(onClick = onOpenScreenSaver) { Text("Ouvrir les réglages d'écran de veille") }
+            OutlinedButton(onClick = onOpenScreenSaver) { Text(stringResource(R.string.settings_open_screen_saver)) }
             Text(stringResource(R.string.help_routines), style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
+
+/** Durées proposées pour l'extinction automatique, en heures (« Jamais » s'ajoute à la fin). */
+private val AUTO_OFF_HOURS = listOf(1, 2, 4, 8)
 
 /** Accès à l'agenda de l'appareil, fourni par l'activité (remplacé dans les tests). */
 internal class CalendarSource(val hasAccess: () -> Boolean, val requestAccess: () -> Unit, val calendars: () -> List<CalendarInfo>)
@@ -286,9 +314,9 @@ private fun EventsSettings(prefs: ClockPrefs, source: CalendarSource) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Afficher les événements du jour")
+                Text(stringResource(R.string.settings_show_events))
                 Text(
-                    "Le jour, ceux qui ne sont pas encore terminés, à côté de l'horloge. La nuit, le calendrier du mois seul.",
+                    stringResource(R.string.settings_show_events_help),
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -301,16 +329,16 @@ private fun EventsSettings(prefs: ClockPrefs, source: CalendarSource) {
             !show -> Unit
 
             !access -> {
-                Text("Pour afficher les événements, StandBy Clock doit pouvoir lire l'agenda.", style = MaterialTheme.typography.bodyMedium)
-                OutlinedButton(onClick = source.requestAccess) { Text("Autoriser l'accès à l'agenda") }
+                Text(stringResource(R.string.settings_calendar_access_help), style = MaterialTheme.typography.bodyMedium)
+                OutlinedButton(onClick = source.requestAccess) { Text(stringResource(R.string.settings_calendar_access_button)) }
             }
 
-            else -> Section("Agendas affichés") {
+            else -> Section(stringResource(R.string.settings_shown_calendars)) {
                 Text(
-                    "Cocher les agendas à afficher. Un agenda ajouté plus tard sur l'appareil reste masqué tant qu'il n'est pas coché.",
+                    stringResource(R.string.settings_shown_calendars_help),
                     style = MaterialTheme.typography.bodySmall
                 )
-                if (calendars.isEmpty()) Text("Aucun agenda sur cet appareil.", style = MaterialTheme.typography.bodyMedium)
+                if (calendars.isEmpty()) Text(stringResource(R.string.settings_no_calendars), style = MaterialTheme.typography.bodyMedium)
                 for (calendar in calendars) {
                     // Toute la ligne se coche, libellé compris : la case seule est une cible trop petite.
                     Row(

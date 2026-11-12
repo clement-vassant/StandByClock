@@ -14,3 +14,5 @@ dependencyResolutionManagement {
 }
 rootProject.name = "StandByClock"
 include(":app")
+// Parcours sur l'APK release passé par R8 (voir release-smoke/build.gradle.kts).
+include(":release-smoke")

@@ -22,6 +22,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import fr.clementvassant.standbyclock.ClockPrefs
 import fr.clementvassant.standbyclock.ClockStyle
+import fr.clementvassant.standbyclock.DeviceStatus
 import fr.clementvassant.standbyclock.NowPlaying
 import java.time.Clock
 import java.time.ZoneId
@@ -34,6 +35,12 @@ import org.junit.runner.RunWith
 
 /** Marge des comparaisons de positions : arrondis de la conversion pixels → dp. */
 private val TOLERANCE = 0.5.dp
+
+/**
+ * Ni batterie ni réveil : l'émulateur est toujours « en charge », et la ligne sous le cadran changerait sa taille.
+ * Ces tests mesurent la mise en page sans elle ; `DeviceStatusScreenTest` couvre la ligne.
+ */
+internal val NO_DEVICE_STATUS = DeviceStatus()
 
 /** Tailles d'écran simulées : elles tiennent dans l'émulateur de la CI, en portrait. */
 private val LANDSCAPE_WIDTH = 400.dp
@@ -77,7 +84,8 @@ class StandByScreenTest {
             onOpenSettings = null,
             modifier = modifier,
             clock = clock,
-            nowPlayingSource = { media }
+            nowPlayingSource = { media },
+            deviceStatusSource = { NO_DEVICE_STATUS }
         )
     }
 
@@ -96,7 +104,8 @@ class StandByScreenTest {
                     onOpenSettings = null,
                     modifier = Modifier.forceLandscape(),
                     clock = clock,
-                    nowPlayingSource = { null }
+                    nowPlayingSource = { null },
+                    deviceStatusSource = { NO_DEVICE_STATUS }
                 )
             }
         }
@@ -116,7 +125,8 @@ class StandByScreenTest {
                     onNightModeChange = {},
                     onOpenSettings = null,
                     clock = clock,
-                    nowPlayingSource = { null }
+                    nowPlayingSource = { null },
+                    deviceStatusSource = { NO_DEVICE_STATUS }
                 )
             }
         }
@@ -137,7 +147,8 @@ class StandByScreenTest {
                     onNightModeChange = {},
                     onOpenSettings = null,
                     clock = clock,
-                    nowPlayingSource = { music }
+                    nowPlayingSource = { music },
+                    deviceStatusSource = { NO_DEVICE_STATUS }
                 )
             }
         }
@@ -232,7 +243,8 @@ class StandByScreenTest {
                 onNightModeChange = {},
                 onOpenSettings = null,
                 clock = clock,
-                nowPlayingSource = { media }
+                nowPlayingSource = { media },
+                deviceStatusSource = { NO_DEVICE_STATUS }
             )
         }
     }

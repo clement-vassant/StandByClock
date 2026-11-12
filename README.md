@@ -28,7 +28,10 @@ Sur Android, l'écran toujours allumé (Always On Display) est réservé au syst
 - **Trois styles d'horloge** : Digital (grands chiffres), Analogique (cadran à aiguilles) et Minimal (chiffres fins). Le choix est mémorisé.
 - **Calendrier du mois** à côté de l'horloge (dessous en portrait), avec le jour courant entouré. Un appui long l'affiche ou le masque.
 - **Événements du jour** : tant qu'il reste un événement aujourd'hui dans les agendas cochés, le mois laisse la place à la semaine en cours et à la liste du jour (4 lignes au plus, puis « +N autres ») : « Journée », « → 15:00 » pour un événement en cours, sinon l'heure de début. Les événements terminés disparaissent, les invitations refusées sont masquées ; sans événement, et toujours la nuit, le mois revient. Les agendas se cochent un par un dans les réglages (aucun au départ), après avoir autorisé la lecture de l'agenda. La liste se met à jour dès que l'agenda change, sans interroger régulièrement.
+- **Batterie et prochain réveil**, sur la ligne de la date (sous le cadran en analogique) : le niveau de batterie avec un éclair pendant la charge, ou téléphone débranché sous 20 % ; l'heure du prochain réveil s'il sonne dans les 24 heures. La nuit, seul le réveil reste (et la batterie faible). Aucune autorisation à donner.
 - **Musique en cours** (Spotify ou tout lecteur) : quand un morceau joue, ou est en pause depuis moins de 10 minutes, une barre s'affiche sous l'heure, dans les trois styles (les chiffres ou le cadran se réduisent un peu pour lui faire place). Calendrier masqué par l'appui long, c'est une grande carte qui prend sa place. Barre et carte montrent la pochette atténuée (en gris la nuit), le titre, l'artiste et des boutons précédent, lecture/pause, suivant et « j'aime » (si le lecteur le propose, comme Spotify). Il faut accorder à l'app l'*accès aux notifications* une fois, depuis ses réglages.
+- **12 h ou 24 h** : l'heure suit le format choisi dans les paramètres du téléphone (Date et heure), même s'il change pendant que l'horloge tourne. En 12 h, la grande horloge garde deux chiffres sans AM/PM (« 02:05 ») ; les horaires de l'agenda, de la plage de nuit et du prochain réveil, eux, portent AM ou PM.
+- **Français ou anglais** : l'app suit la langue du téléphone, en anglais sur un téléphone en anglais et en français sinon ; depuis Android 13, on peut aussi choisir sa langue dans les paramètres de l'app. La date suit l'ordre de la région (« mardi 20 octobre », « Tuesday, October 20 » aux États-Unis, « Tuesday 20 October » au Royaume-Uni), et la semaine des calendriers commence le jour d'usage de la région, avec sa numérotation (lundi en France, dimanche aux États-Unis).
 - **Jour ou nuit rouge** : en *Auto*, la nuit suit une plage horaire (22:00 → 07:00 par défaut) ; on peut aussi forcer *Jour* ou *Nuit*. Le mode nuit passe en rouge sombre à luminosité minimale pour préserver la vision nocturne.
 - **Gestes** :
   - balayer à gauche ou à droite pour changer de style ;
@@ -82,7 +85,6 @@ Le plus simple : télécharger l'APK `standbyclock-vX.Y.Z.apk` de la [dernière 
 ## Feuille de route
 
 - Un 4e style d'horloge inspiré de celui d'Apple.
-- Les prochains événements de l'agenda à côté de l'horloge.
 - Musique : barre de progression et choix du lecteur quand plusieurs jouent.
 
 ## Programmer avec vos routines
@@ -108,7 +110,7 @@ Les fabricants d'écrans OLED (Samsung notamment) conseillent d'éviter les imag
 - **Orbite anti-marquage** : tout le contenu se déplace chaque minute sur une spirale lente jusqu'à ±20 dp, sans jamais rester deux minutes au même endroit.
 - **Inversion des côtés chaque heure** : heures paires, horloge à gauche et calendrier à droite (en portrait : horloge en haut, calendrier dessous) ; heures impaires, l'inverse.
 - **Moins de pixels allumés** : pas de blanc pur (gris clair `#BDBDBD` le jour), jour du calendrier entouré d'un anneau fin plutôt que d'un disque plein, mode nuit rouge sombre.
-- **Luminosité plafonnée** : 35 % le jour, minimale la nuit (dans l'app) ; l'écran de veille demande un écran atténué.
+- **Luminosité plafonnée** : 35 % le jour, minimale la nuit dans l'app ; l'écran de veille garde le jour le niveau atténué du système et passe lui aussi au minimum la nuit.
 - **Arrêt automatique** : réglage *Éteindre après* (1 h, 2 h, 4 h, 8 h, Jamais ; 2 h par défaut). Le délai écoulé, l'horloge se ferme et l'écran peut s'éteindre normalement.
 - **Économie d'énergie** : la nuit, ni trotteuse ni deux-points clignotants, et l'affichage n'est redessiné qu'une fois par minute (1 image par minute au lieu de 60, mesuré sur l'appareil de test). L'app demande aussi le taux de rafraîchissement le plus bas de l'écran (souvent 60 Hz au lieu de 120).
 
@@ -121,7 +123,7 @@ Les fabricants d'écrans OLED (Samsung notamment) conseillent d'éviter les imag
 4. L'APK est dans `app/build/outputs/apk/debug/app-debug.apk`.
 
 ### En ligne de commande
-Prérequis : le SDK Android (`ANDROID_HOME` défini, ou un fichier `local.properties` avec `sdk.dir=...`) et Java 17, géré par [mise](https://mise.jdx.dev) via `mise.toml` (Gradle 8.14 refuse les JDK trop récents). Installer mise, puis :
+Prérequis : le SDK Android (`ANDROID_HOME` défini, ou un fichier `local.properties` avec `sdk.dir=...`) et Java 17, géré par [mise](https://mise.jdx.dev) via `mise.toml` (Gradle refuse les JDK trop récents). Installer mise, puis :
 ```bash
 mise install
 mise exec -- ./gradlew assembleDebug
@@ -148,45 +150,65 @@ L'écran de veille démarre quand l'écran s'éteint tout seul pendant la charge
 
 ## Tests
 
-- **Tests unitaires** (JVM, rapides) : plage de nuit, raccourcis jour/nuit, grille du calendrier, côté de l'horloge, orbite anti-marquage, rythme de rafraîchissement, détection du « j'aime », affichage et place de la musique (sous l'heure, ou carte si le calendrier est masqué), événements du jour (jours UTC des événements « toute la journée », minuit, tri, agendas cochés, semaine ISO).
+- **Tests unitaires** (JVM, rapides) : plage de nuit, raccourcis jour/nuit, grille du calendrier, côté de l'horloge, orbite anti-marquage, rythme de rafraîchissement, délai d'extinction automatique, écriture 12 h ou 24 h, détection du « j'aime », affichage et place de la musique (sous l'heure, ou carte si le calendrier est masqué), événements du jour (jours UTC des événements « toute la journée », minuit, tri, agendas cochés), semaine selon la région (premier jour, numéro), date dans la langue de l'app et l'ordre de la région, batterie et prochain réveil (seuil de batterie faible, charge masquée la nuit, réveil dans les 24 heures, dans le fuseau de l'horloge et en 12 h ou 24 h, niveau calculé sur l'échelle du système), textes visibles (tous dans `strings.xml`, tous traduits en anglais, aucun modèle de téléphone), version d'Android visée et maintien de *Toujours paysage* sur grand écran.
   ```bash
-  mise exec -- ./gradlew testDebugUnitTest
+  mise run test
   ```
-- **Tests d'interface** (Compose, sur un émulateur ou un téléphone branché, à heure fixe) : calendrier affiché par défaut, calendrier et musique visibles ensemble, barre musique sous l'heure sans chevauchement en paysage et en portrait (3 styles), carte musique si le calendrier est masqué, cadran pas plus haut que le calendrier, toucher pour la nuit, appui long pour le calendrier, balayage entre les styles, semaine et événements du jour à la place du mois (et le mois la nuit ou quand tout est passé), choix des agendas dans les réglages.
+- **Tests d'interface** (Compose, sur un émulateur ou un téléphone branché, à heure fixe) : calendrier affiché par défaut, calendrier et musique visibles ensemble, barre musique sous l'heure sans chevauchement en paysage et en portrait (3 styles), carte musique si le calendrier est masqué, cadran pas plus haut que le calendrier, toucher pour la nuit, appui long pour le calendrier, balayage entre les styles, semaine et événements du jour à la place du mois (et le mois la nuit ou quand tout est passé), choix des agendas dans les réglages, heures en 12 h ou 24 h selon le téléphone, batterie et prochain réveil à côté de la date (réveil seul la nuit, batterie débranchée seulement si faible, sous le cadran en analogique, avec ou sans calendrier).
   ```bash
-  mise exec -- ./gradlew connectedDebugAndroidTest
+  mise exec -- ./gradlew connectedDebugAndroidTest   # ou mise run test:connected, qui joue aussi les parcours sur l'APK release
   ```
   Avec plusieurs appareils connectés, choisir l'émulateur avec `ANDROID_SERIAL=emulator-5554` : les tests effacent les réglages de l'app.
 
-Les deux suites tournent dans GitHub Actions sur chaque pull request, avec ktlint, detekt et Android Lint.
+- **Captures de référence** (Roborazzi, sur la JVM) : les 3 styles en jour et nuit, paysage et portrait, avec musique, sans calendrier, avec les événements du jour, en 12 h, en *Toujours paysage*, en anglais, avec la batterie et le prochain réveil, et l'écran des réglages en français et en anglais ; chaque image est comparée à celle de `app/src/test/screenshots/`.
+  ```bash
+  mise run screenshots
+  ```
+
+Ces suites tournent dans GitHub Actions sur chaque pull request, avec ktlint, detekt, Android Lint et des parcours de bout en bout sur émulateur (détail dans [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ## Qualité
 
 `main` est protégée : on n'y pousse jamais directement, chaque changement passe par une pull request qui ne peut être mergée que si la CI est verte. Avant de pousser :
 
 ```bash
-scripts/check.sh        # ktlint, detekt, Android Lint, tests unitaires, APK
-scripts/check.sh --all  # idem + tests d'interface
+mise run check      # ktlint, detekt, Android Lint, tests unitaires, captures de référence, APK debug et release
+mise run check:all  # idem + tests d'interface, parcours e2e, et parcours courts sur l'APK release
 ```
 
-Le détail (jobs de la CI, conventions de code) est dans [CONTRIBUTING.md](CONTRIBUTING.md).
+Ces tâches sont définies dans `mise.toml` (`mise tasks` les liste) et la CI lance les mêmes. Le détail (jobs de la CI, conventions de code) est dans [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Structure
 
 ```
 app/src/main/java/fr/clementvassant/standbyclock/
-  MainActivity.kt          activité plein écran, paysage, écran allumé
+  MainActivity.kt          activité plein écran, écran allumé
   StandByDreamService.kt   écran de veille Android (charge)
-  SettingsActivity.kt      réglages (style, calendrier, jour/nuit, plage de nuit)
+  SettingsActivity.kt      réglages (style, calendrier, agendas, musique, jour/nuit, orientation, extinction)
   ClockPrefs.kt            préférences partagées + calcul jour/nuit
+  Orientation.kt           réglage Orientation appliqué à l'app plein écran
+  AutoOff.kt               délai avant l'extinction automatique, commun à l'app et à l'écran de veille
+  TimeFormat.kt            écriture des heures en 12 h ou 24 h, d'après le téléphone
   TimeUnits.kt             constantes de temps nommées (minutes par heure…)
-  ui/StandByScreen.kt      pager des styles, anti-marquage, mode nuit, calendrier
-  ui/ClockColors.kt        palettes jour et nuit
-  ui/Clocks.kt             les styles d'horloge et le calendrier du mois
-  ui/MediaCard.kt          carte « musique en cours » et ses boutons
+  CalendarEvents.kt        agendas et événements du jour (tri, filtres, jours « toute la journée »)
+  DeviceCalendar.kt        lecture de l'agenda d'Android, relue quand il change
   NowPlaying.kt            suivi de la session média active (titre, pochette, contrôles, j'aime)
   MediaListenerService.kt  écouteur de notifications qui donne accès aux sessions média
   RefreshRate.kt           demande le taux de rafraîchissement le plus bas de l'écran
+  DeviceStatus.kt          batterie et prochain réveil lus auprès du système, et ce qui s'en affiche jour et nuit
+  ui/StandByScreen.kt      pager des styles, gestes, mode nuit
+  ui/ClockLayout.kt        horloge et panneau côte à côte ou empilés, orbite et inversion anti-marquage
+  ui/Landscape.kt          quart de tour de l'horloge en Toujours paysage
+  ui/Clocks.kt             les styles d'horloge et le calendrier du mois
+  ui/Agenda.kt             semaine en cours et événements du jour
+  ui/DateTexts.kt          dates dans la langue de l'app et l'ordre de la région, semaine de la région
+  ui/MediaCard.kt          carte « musique en cours » et ses boutons
+  ui/StatusRow.kt          batterie et prochain réveil sur la ligne de la date, avec leurs icônes
+  ui/ClockColors.kt        palettes jour et nuit
+  ui/TestTags.kt           repères des nœuds testés
+app/src/main/res/values/strings.xml      tous les textes visibles, en français (langue par défaut)
+app/src/main/res/values-en/strings.xml   leur traduction anglaise
+gradle/libs.versions.toml                versions des plugins et bibliothèques (catalogue Gradle)
 ```
 
 Pour ajouter un style : une valeur dans `ClockStyle`, un `@Composable` dans `Clocks.kt`, une ligne dans le `when` de `StandByScreen.kt`.

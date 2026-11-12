@@ -8,6 +8,7 @@ import androidx.test.uiautomator.uiAutomator
 import androidx.test.uiautomator.watcher.PermissionDialog
 import fr.clementvassant.standbyclock.DeviceCalendar
 import fr.clementvassant.standbyclock.MainActivity
+import fr.clementvassant.standbyclock.R
 import fr.clementvassant.standbyclock.SettingsActivity
 import fr.clementvassant.standbyclock.ui.TAG_AGENDA
 import fr.clementvassant.standbyclock.ui.TAG_SETTINGS
@@ -44,8 +45,9 @@ class CalendarJourneyTest {
         val settings = byTag(TAG_SETTINGS)
         if (!DeviceCalendar.hasAccess(E2e.context)) {
             // Les réglages dépassent l'écran : Compose n'expose que ce qui est affiché, on fait défiler jusqu'au bouton.
-            val allow = settings.scrollUntil(Direction.DOWN, Until.findObject(By.text("Autoriser l'accès à l'agenda")))
-            assertNotNull("Bouton « Autoriser l'accès à l'agenda » introuvable", allow)
+            val label = E2e.context.getString(R.string.settings_calendar_access_button)
+            val allow = settings.scrollUntil(Direction.DOWN, Until.findObject(By.text(label)))
+            assertNotNull("Bouton « $label » introuvable", allow)
             allow.click()
         }
 

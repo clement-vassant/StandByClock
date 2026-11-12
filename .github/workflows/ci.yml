@@ -1,6 +1,7 @@
 name: CI
 
 # Une PR ne peut être mergée que si le job « ci-ok » est vert (règle de protection de main).
+# Chaque job lance une tâche de mise.toml (`mise run lint`, `mise run test`…), la même qu'en local.
 on:
   pull_request:
   push:
@@ -24,7 +25,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
       - uses: gradle/actions/setup-gradle@v6
-      - run: ./gradlew ktlintCheck detekt lintDebug
+      - run: mise run lint
       - name: Afficher tous les problèmes Android Lint
         if: failure()
         run: cat app/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt || true
@@ -43,7 +44,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
       - uses: gradle/actions/setup-gradle@v6
-      - run: ./gradlew testDebugUnitTest
+      - run: mise run test
       - name: Rapports en cas d'échec
         if: failure()
         uses: actions/upload-artifact@v7
@@ -61,7 +62,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
       - uses: gradle/actions/setup-gradle@v6
-      - run: ./gradlew verifyRoborazziDebug
+      - run: mise run screenshots
       - name: Différences en cas d'échec
         if: failure()
         uses: actions/upload-artifact@v7
@@ -72,7 +73,8 @@ jobs:
   instrumented-tests:
     name: Tests d'interface et parcours e2e (émulateur)
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    # Deux passes : l'APK debug, puis quelques parcours sur l'APK release (R8).
+    timeout-minutes: 45
     env:
       API_LEVEL: 34
     steps:
@@ -110,9 +112,9 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
           script: echo "Émulateur créé et mis en cache."
-      # Tests Compose et parcours e2e UI Automator (androidTest/.../e2e). Le script tient sur une ligne : l'action
-      # lance chaque ligne à part, et les captures des parcours doivent être récupérées même si un test échoue.
-      - name: Tests Compose et parcours e2e sur l'émulateur
+      # Tests Compose et parcours e2e UI Automator (androidTest/.../e2e) sur l'APK debug, puis parcours courts sur
+      # l'APK release passé par R8 (module release-smoke). Le script récupère les captures même si un test échoue.
+      - name: Tests Compose et parcours e2e (debug puis release) sur l'émulateur
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ env.API_LEVEL }}
@@ -121,7 +123,7 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: ./gradlew connectedDebugAndroidTest; status=$?; adb pull /sdcard/Download/standbyclock-e2e app/build/e2e-captures || true; exit $status
+          script: mise run test:connected
       # Le rapport HTML n'est lisible qu'en téléchargeant l'artefact : on écrit aussi les tests en échec
       # et leur message dans le journal du job.
       - name: Tests en échec
@@ -150,7 +152,7 @@ jobs:
       - uses: jdx/mise-action@v4
       - uses: gradle/actions/setup-gradle@v6
       # La variante release est celle publiée par release.yml : elle doit compiler sur chaque PR.
-      - run: ./gradlew assembleDebug assembleRelease
+      - run: mise run build
       - uses: actions/upload-artifact@v7
         with:
           name: standbyclock-debug

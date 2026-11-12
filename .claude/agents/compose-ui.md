@@ -16,4 +16,4 @@ Conventions :
 - `@Composable` courts, sans logique de calcul (la sortir en fonction pure testée), paramètres explicites, `Modifier` en paramètre quand le composant est réutilisable.
 - Textes visibles en français et génériques (aucun modèle de téléphone).
 
-Avant de rendre la main : `mise exec -- ./gradlew ktlintFormat ktlintCheck detekt lintDebug testDebugUnitTest`.
+Avant de rendre la main : `mise run format && mise run lint && mise run test`.

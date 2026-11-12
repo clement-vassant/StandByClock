@@ -16,11 +16,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import fr.clementvassant.standbyclock.CalendarEvent
 import fr.clementvassant.standbyclock.ClockPrefs
 import fr.clementvassant.standbyclock.ClockStyle
+import fr.clementvassant.standbyclock.R
 import fr.clementvassant.standbyclock.ThemeMode
 import java.time.Clock
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.time.temporal.WeekFields
+import java.util.Locale
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -32,6 +35,10 @@ import org.junit.runner.RunWith
 class TodayEventsScreenTest {
     @get:Rule
     val rule = createComposeRule()
+
+    // Les heures attendues sont en 24 h, quelle que soit la langue de l'émulateur.
+    @get:Rule
+    val hourFormat = SystemHourFormatRule()
 
     private val context: Context = ApplicationProvider.getApplicationContext()
     private lateinit var prefs: ClockPrefs
@@ -67,6 +74,7 @@ class TodayEventsScreenTest {
                 onOpenSettings = null,
                 clock = clock,
                 nowPlayingSource = { null },
+                deviceStatusSource = { NO_DEVICE_STATUS },
                 eventsSource = { enabled, _: LocalDate -> if (enabled) events else emptyList() }
             )
         }
@@ -77,9 +85,11 @@ class TodayEventsScreenTest {
         show(listOf(standup, sprintReview, dentist))
         rule.onNodeWithTag(TAG_AGENDA).assertIsDisplayed()
         rule.onNodeWithTag(TAG_CALENDAR).assertDoesNotExist()
-        rule.onNodeWithText("semaine 43").assertIsDisplayed()
+        rule.onNodeWithText(
+            context.getString(R.string.agenda_week_number, weekNumber(LocalDate.of(2026, 10, 20), WeekFields.of(Locale.getDefault())))
+        ).assertIsDisplayed()
         // En cours : l'heure de fin ; à venir : l'heure de début ; terminé : plus affiché.
-        rule.onNodeWithText("→ 15:00").assertIsDisplayed()
+        rule.onNodeWithText(context.getString(R.string.agenda_ends_at, "15:00")).assertIsDisplayed()
         rule.onNodeWithText("17:30").assertIsDisplayed()
         rule.onNodeWithText("Point d'équipe").assertDoesNotExist()
     }
@@ -125,7 +135,7 @@ class TodayEventsScreenTest {
     fun tooManyEventsEndWithACount() {
         val evening = (15..20).map { CalendarEvent("Rendez-vous $it", at(it), at(it, 30), allDay = false, calendarId = work) }
         show(evening)
-        rule.onNodeWithText("+3 autres").assertIsDisplayed()
+        rule.onNodeWithText(context.resources.getQuantityString(R.plurals.agenda_more_events, 3, 3)).assertIsDisplayed()
         rule.onNodeWithText("Rendez-vous 18").assertDoesNotExist()
     }
 

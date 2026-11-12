@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
@@ -32,36 +33,45 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import fr.clementvassant.standbyclock.DAYS_PER_WEEK
+import fr.clementvassant.standbyclock.HourFormat
+import fr.clementvassant.standbyclock.StatusLine
+import fr.clementvassant.standbyclock.clockHour
+import fr.clementvassant.standbyclock.clockTime
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
 
-private val dateFormat = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENCH)
+/** Texte batterie et réveil du style analogique, et la place réservée sous le cadran (la ligne et sa marge, en lignes). */
+private val ANALOG_STATUS_TEXT = 20.sp
+private const val ANALOG_STATUS_LINES = 2f
 
 /** Hauteur du calendrier en cellules : en-tête du mois, jours de la semaine et 6 semaines au plus. */
 private const val CALENDAR_ROWS = 8.5f
-
-private fun ZonedDateTime.hhmm() = "%02d:%02d".format(hour, minute)
 
 /** Convertit une taille en dp en sp, pour que les chiffres suivent la place disponible. */
 @Composable
 internal fun Dp.asSp(): TextUnit = with(LocalDensity.current) { toSp() }
 
-/** Style 1 : grands chiffres façon StandBy, heures en clair, minutes en accent. */
+/** Style 1 : grands chiffres façon StandBy, heures en clair, minutes en accent ; batterie et réveil après la date. */
 @Composable
-fun DigitalClock(now: ZonedDateTime, colors: ClockColors, showSeconds: Boolean, modifier: Modifier = Modifier) {
+fun DigitalClock(
+    now: ZonedDateTime,
+    colors: ClockColors,
+    showSeconds: Boolean,
+    hourFormat: HourFormat,
+    modifier: Modifier = Modifier,
+    status: StatusLine = StatusLine()
+) {
     BoxWithConstraints(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         val digits = min(maxHeight * 0.55f, maxWidth * 0.27f).asSp()
         val small = min(maxHeight * 0.08f, maxWidth * 0.045f).asSp()
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("%02d".format(now.hour), color = colors.primary, fontSize = digits, fontWeight = FontWeight.Bold)
+                Text(clockHour(now.hour, hourFormat), color = colors.primary, fontSize = digits, fontWeight = FontWeight.Bold)
                 Text(
                     ":",
                     color = if (!showSeconds || now.second % 2 == 0) colors.secondary else colors.secondary.copy(alpha = 0.3f),
@@ -70,7 +80,10 @@ fun DigitalClock(now: ZonedDateTime, colors: ClockColors, showSeconds: Boolean, 
                 )
                 Text("%02d".format(now.minute), color = colors.accent, fontSize = digits, fontWeight = FontWeight.Bold)
             }
-            Text(now.format(dateFormat).replaceFirstChar { it.uppercase() }, color = colors.secondary, fontSize = small)
+            DateAndStatus(small) {
+                Text(now.format(fullDateFormat()).replaceFirstChar { it.uppercase() }, color = colors.secondary, fontSize = small)
+                StatusRow(status, colors, small)
+            }
         }
     }
 }
@@ -81,6 +94,8 @@ fun DigitalClock(now: ZonedDateTime, colors: ClockColors, showSeconds: Boolean, 
  * @param matchCalendar calendrier à côté : le cadran prend sa hauteur. Faux en portrait, où le calendrier
  * est dessous : le cadran remplit alors son panneau.
  * @param calendarHeight hauteur du calendrier, en fraction de celle de l'horloge.
+ * @param status batterie et réveil, toujours sous le cadran : la grande date, en tailles fixes, déborde déjà
+ * sur un petit écran.
  */
 @Composable
 fun AnalogClockWithDate(
@@ -90,7 +105,8 @@ fun AnalogClockWithDate(
     showSeconds: Boolean,
     modifier: Modifier = Modifier,
     matchCalendar: Boolean = true,
-    calendarHeight: Float = 1f
+    calendarHeight: Float = 1f,
+    status: StatusLine = StatusLine()
 ) {
     Row(
         modifier.fillMaxSize(),
@@ -98,27 +114,35 @@ fun AnalogClockWithDate(
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         if (showDate) {
-            AnalogDial(now, colors, showSeconds, Modifier.fillMaxHeight(0.8f).aspectRatio(1f))
+            Column(Modifier.fillMaxHeight(0.8f), horizontalAlignment = Alignment.CenterHorizontally) {
+                AnalogDial(now, colors, showSeconds, Modifier.weight(1f).aspectRatio(1f))
+                StatusRow(status, colors, ANALOG_STATUS_TEXT, Modifier.padding(top = ANALOG_STATUS_TEXT.asDp() * 0.4f))
+            }
         } else {
             // Calendrier à côté : le cadran ne dépasse pas sa hauteur (mêmes calculs que MonthCalendar,
             // dont la colonne fait 1/1.4 de celle de l'horloge) : jours de la semaine + semaines du mois.
             BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 val cell = min(maxWidth / CLOCK_PANE_WEIGHT / DAYS_PER_WEEK, maxHeight * calendarHeight / CALENDAR_ROWS)
-                val rows = 0.8f + monthGrid(now.toLocalDate()).weeks
-                val paneSize = min(maxWidth, maxHeight) * 0.9f
-                AnalogDial(now, colors, showSeconds, Modifier.size(if (matchCalendar) min(cell * rows, paneSize) else paneSize))
+                val rows = 0.8f + monthGrid(now.toLocalDate(), weekFields().firstDayOfWeek).weeks
+                // Batterie et réveil se placent juste sous le cadran, qui leur laisse une ligne et sa marge.
+                val statusSpace = if (status.isEmpty) 0.dp else ANALOG_STATUS_TEXT.asDp() * ANALOG_STATUS_LINES
+                val paneSize = min(maxWidth, maxHeight - statusSpace) * 0.9f
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    AnalogDial(now, colors, showSeconds, Modifier.size(if (matchCalendar) min(cell * rows, paneSize) else paneSize))
+                    StatusRow(status, colors, ANALOG_STATUS_TEXT, Modifier.padding(top = ANALOG_STATUS_TEXT.asDp() * 0.4f))
+                }
             }
         }
         if (showDate) {
             Column {
                 Text(
-                    now.format(DateTimeFormatter.ofPattern("EEEE", Locale.FRENCH)).uppercase(),
+                    now.format(weekdayFormat()).uppercase(),
                     color = colors.accent,
                     fontSize = 30.sp,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(now.dayOfMonth.toString(), color = colors.primary, fontSize = 140.sp, fontWeight = FontWeight.Bold)
-                Text(now.format(DateTimeFormatter.ofPattern("MMMM", Locale.FRENCH)), color = colors.secondary, fontSize = 30.sp)
+                Text(now.format(monthFormat()), color = colors.secondary, fontSize = 30.sp)
             }
         }
     }
@@ -153,33 +177,55 @@ private fun DrawScope.drawRadial(c: Offset, fraction: Float, from: Float, to: Fl
     drawLine(color, Offset(c.x + dx * from, c.y + dy * from), Offset(c.x + dx * to, c.y + dy * to), width, StrokeCap.Round)
 }
 
-/** Style 3 : très épuré, chiffres fins, peu de pixels allumés (idéal la nuit). */
+/** Style 3 : très épuré, chiffres fins, peu de pixels allumés (idéal la nuit) ; batterie et réveil après la date. */
 @Composable
-fun MinimalClock(now: ZonedDateTime, colors: ClockColors, modifier: Modifier = Modifier) {
+fun MinimalClock(
+    now: ZonedDateTime,
+    colors: ClockColors,
+    hourFormat: HourFormat,
+    modifier: Modifier = Modifier,
+    status: StatusLine = StatusLine()
+) {
     BoxWithConstraints(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         val digits = min(maxHeight * 0.7f, maxWidth * 0.3f).asSp()
         val small = min(maxHeight * 0.06f, maxWidth * 0.03f).asSp()
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(now.hhmm(), color = colors.primary, fontSize = digits, fontWeight = FontWeight.Thin, fontFamily = FontFamily.SansSerif)
-            Text(now.format(dateFormat), color = colors.secondary, fontSize = small, fontWeight = FontWeight.Light, letterSpacing = 4.sp)
+            Text(
+                clockTime(now.hour, now.minute, hourFormat),
+                color = colors.primary,
+                fontSize = digits,
+                fontWeight = FontWeight.Thin,
+                fontFamily = FontFamily.SansSerif
+            )
+            DateAndStatus(small) {
+                Text(
+                    now.format(fullDateFormat()),
+                    color = colors.secondary,
+                    fontSize = small,
+                    fontWeight = FontWeight.Light,
+                    letterSpacing = 4.sp
+                )
+                StatusRow(status, colors, small)
+            }
         }
     }
 }
 
-/** Calendrier du mois affiché à côté de l'horloge ; semaine du lundi au dimanche, aujourd'hui entouré. */
+/** Calendrier du mois affiché à côté de l'horloge ; semaine selon la région, aujourd'hui entouré. */
 @Composable
 fun MonthCalendar(now: ZonedDateTime, colors: ClockColors, modifier: Modifier = Modifier) {
     BoxWithConstraints(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         // CALENDAR_ROWS : en-tête, jours de la semaine, 6 semaines au plus
         val cell = min(maxWidth / DAYS_PER_WEEK, maxHeight / CALENDAR_ROWS)
         val text = (cell * 0.42f).asSp()
-        val (offset, days, weeks) = monthGrid(now.toLocalDate())
+        val firstDay = weekFields().firstDayOfWeek
+        val (offset, days, weeks) = monthGrid(now.toLocalDate(), firstDay)
         val today = now.dayOfMonth
 
         Column(Modifier.fillMaxWidth().testTag(TAG_CALENDAR)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
                 Text(
-                    now.format(DateTimeFormatter.ofPattern("MMMM", Locale.FRENCH)).uppercase(),
+                    now.format(monthFormat()).uppercase(),
                     color = colors.accent,
                     fontSize = (cell * 0.5f).asSp(),
                     fontWeight = FontWeight.SemiBold
@@ -187,7 +233,7 @@ fun MonthCalendar(now: ZonedDateTime, colors: ClockColors, modifier: Modifier = 
                 Text(now.year.toString(), color = colors.secondary, fontSize = text)
             }
             Row(Modifier.fillMaxWidth()) {
-                for (label in listOf("L", "M", "M", "J", "V", "S", "D")) {
+                for (label in weekInitials(firstDay)) {
                     Box(Modifier.weight(1f).height(cell * 0.8f), contentAlignment = Alignment.Center) {
                         Text(label, color = colors.secondary, fontSize = (cell * 0.34f).asSp(), fontWeight = FontWeight.SemiBold)
                     }
@@ -207,7 +253,7 @@ fun MonthCalendar(now: ZonedDateTime, colors: ClockColors, modifier: Modifier = 
                                     day.toString(),
                                     color = when {
                                         day == today -> colors.accent
-                                        col >= 5 -> colors.secondary
+                                        firstDay.plus(col.toLong()).isWeekend() -> colors.secondary
                                         else -> colors.primary
                                     },
                                     fontSize = text,
@@ -222,12 +268,15 @@ fun MonthCalendar(now: ZonedDateTime, colors: ClockColors, modifier: Modifier = 
     }
 }
 
-/** Grille d'un mois, semaine du lundi au dimanche : cases vides avant le 1er, nombre de jours et de semaines. */
+/**
+ * Grille d'un mois, semaine commençant par [firstDay] (lundi par défaut) : cases vides avant le 1er, nombre de
+ * jours et de semaines.
+ */
 data class MonthGrid(val offset: Int, val days: Int, val weeks: Int)
 
-fun monthGrid(date: LocalDate): MonthGrid {
+fun monthGrid(date: LocalDate, firstDay: DayOfWeek = DayOfWeek.MONDAY): MonthGrid {
     val first = date.withDayOfMonth(1)
-    val offset = first.dayOfWeek.value - DayOfWeek.MONDAY.value
+    val offset = (first.dayOfWeek.value - firstDay.value).mod(DAYS_PER_WEEK)
     val days = first.lengthOfMonth()
     return MonthGrid(offset, days, (offset + days + DAYS_PER_WEEK - 1) / DAYS_PER_WEEK)
 }

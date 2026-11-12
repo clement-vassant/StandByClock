@@ -3,13 +3,22 @@ package fr.clementvassant.standbyclock.e2e
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
-import fr.clementvassant.standbyclock.ui.TAG_SCREEN
 
 /**
  * Pilote l'écran de veille d'Android comme le ferait la charge : on choisit StandBy Clock dans les réglages
  * système, puis on le démarre. Les réglages touchés sont rendus à la fin (émulateur du Mac partagé).
+ *
+ * Partagé par les parcours e2e de l'app (APK debug) et le module release-smoke (APK release) : il ne passe que
+ * par le shell et l'écran, jamais par les classes de l'app, que R8 renomme dans l'APK release.
  */
-internal class ScreenSaver(private val device: UiDevice) {
+internal class ScreenSaver(
+    private val device: UiDevice,
+    private val packageName: String,
+    private val capturesDir: String,
+    private val screenTimeoutMs: Long,
+    /** testTag de l'écran de l'horloge (`TAG_SCREEN`), passé en paramètre : release-smoke ne voit pas l'app. */
+    private val screenTag: String
+) {
     private val touched = listOf(
         "secure" to "screensaver_enabled",
         "secure" to "screensaver_components",
@@ -27,7 +36,7 @@ internal class ScreenSaver(private val device: UiDevice) {
      */
     fun start() {
         shell("settings put secure screensaver_enabled 1")
-        shell("settings put secure screensaver_components ${E2e.PACKAGE}/.StandByDreamService")
+        shell("settings put secure screensaver_components $packageName/.StandByDreamService")
         val answers = mutableListOf<String>()
         for (command in listOf("am start -W -n com.android.systemui/.Somnambulator", "cmd dreams start-dreaming")) {
             answers += "$ $command\n" + shell(command).trim()
@@ -44,8 +53,8 @@ internal class ScreenSaver(private val device: UiDevice) {
             if (isShown(SLEEP_TIMEOUT_MS)) return
         }
 
-        shell("mkdir -p ${E2e.CAPTURES_DIR}")
-        shell("screencap -p ${E2e.CAPTURES_DIR}/ecran-de-veille-echec.png")
+        shell("mkdir -p $capturesDir")
+        shell("screencap -p $capturesDir/ecran-de-veille-echec.png")
         val dreams = shell("dumpsys dreams").lines().take(DUMP_LINES).joinToString("\n")
         val power = shell("dumpsys power").lines().filter { line -> POWER_KEYS.any { it in line } }.joinToString("\n")
         throw AssertionError(
@@ -55,9 +64,9 @@ internal class ScreenSaver(private val device: UiDevice) {
 
     /** Retour : un écran de veille interactif se ferme au bouton retour, comme pour l'utilisateur. */
     fun stop() {
-        if (device.hasObject(By.res(TAG_SCREEN))) {
+        if (device.hasObject(By.res(screenTag))) {
             device.pressBack()
-            device.wait(Until.gone(By.res(TAG_SCREEN)), E2e.SCREEN_TIMEOUT_MS)
+            device.wait(Until.gone(By.res(screenTag)), screenTimeoutMs)
         }
         shell("dumpsys battery reset")
         for ((setting, value) in previous) {
@@ -75,7 +84,7 @@ internal class ScreenSaver(private val device: UiDevice) {
         device.wakeUp()
     }
 
-    private fun isShown(timeoutMs: Long) = device.wait(Until.hasObject(By.res(TAG_SCREEN)), timeoutMs)
+    private fun isShown(timeoutMs: Long) = device.wait(Until.hasObject(By.res(screenTag)), timeoutMs)
 
     private fun shell(command: String): String = device.executeShellCommand(command)
 
